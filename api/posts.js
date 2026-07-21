@@ -19,6 +19,14 @@ function readText(prop) {
   const arr = prop.title || prop.rich_text || [];
   return arr.map((t) => t.plain_text).join("").trim();
 }
+// 속성 이름을 대소문자 무시하고 찾기 (예: "Date of Issue" vs "Date of issue")
+function getProp(props, name) {
+  if (!props) return null;
+  if (props[name]) return props[name];
+  const lower = name.toLowerCase();
+  for (const k of Object.keys(props)) if (k.toLowerCase() === lower) return props[k];
+  return null;
+}
 function readAuthor(prop) {
   if (!prop) return "";
   if (prop.people) return prop.people.map((x) => x.name).filter(Boolean).join(", ");
@@ -31,6 +39,8 @@ function readStatus(prop) {
   if (!prop) return "";
   if (prop.status) return prop.status.name || "";
   if (prop.select) return prop.select.name || "";
+  if (prop.multi_select) return prop.multi_select.map((x) => x.name).join(", ");
+  if (prop.rich_text || prop.title) return readText(prop);
   return "";
 }
 function meaningfulInsight(s) {
@@ -150,19 +160,22 @@ export default async function handler(req, res) {
     let posts = await Promise.all(
       results.map(async (page, i) => {
         const p = page.properties || {};
-        const status = readStatus(p["Status"]);
-        let insight = readText(p["Insight"]);
+        const status = readStatus(getProp(p, "Status"));
+        let insight = readText(getProp(p, "Insight"));
         if (!meaningfulInsight(insight)) insight = await readInsightBody(page.id, token);
+        const dateProp = getProp(p, "Date of Issue");
+        const sourceProp = getProp(p, "Source");
+        const tagProp = getProp(p, "Tag");
         return {
           id: i + 1,
           status,
-          title: readText(p["Title"]),
-          author: readAuthor(p["Author"]),
-          summary: readText(p["Content Summary"]),
+          title: readText(getProp(p, "Title")),
+          author: readAuthor(getProp(p, "Author")),
+          summary: readText(getProp(p, "Content Summary")),
           insight,
-          source: (p["Source"] && p["Source"].url) || "",
-          date: (p["Date of Issue"] && p["Date of Issue"].date && p["Date of Issue"].date.start) || "",
-          tags: p["Tag"] && p["Tag"].multi_select ? p["Tag"].multi_select.map((t) => t.name) : [],
+          source: (sourceProp && sourceProp.url) || "",
+          date: (dateProp && dateProp.date && dateProp.date.start) || "",
+          tags: tagProp && tagProp.multi_select ? tagProp.multi_select.map((t) => t.name) : [],
         };
       })
     );
@@ -175,9 +188,10 @@ export default async function handler(req, res) {
         published_count: posts.filter((x) => x.title && PUBLISH_STATUS.includes(normStatus(x.status))).length,
         first_row: first
           ? {
-              title: readText(first["Title"]),
-              status: readStatus(first["Status"]),
-              status_norm: normStatus(readStatus(first["Status"])),
+              title: readText(getProp(first, "Title")),
+              status: readStatus(getProp(first, "Status")),
+              status_norm: normStatus(readStatus(getProp(first, "Status"))),
+              status_raw: getProp(first, "Status"),
               property_names: Object.keys(first),
             }
           : null,
