@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="BAY 리서치팀 뉴스트래킹 아카이브" />
+<title>BAY 리서치팀 · 뉴스트래킹</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0b0e14;--bg-soft:#11151f;--card:#151a26;--card-hover:#1b2130;--border:#232a3a;
+    --text:#e8ecf4;--muted:#9aa6bd;--faint:#69748c;--accent:#5b8cff;--accent-soft:rgba(91,140,255,.14);
+    --green:#4ecb8d;--amber:#f2b45a;--radius:16px;--maxw:960px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:"Noto Sans KR","Inter",system-ui,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -200px,#141b2b 0%,var(--bg) 60%);
+    color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased;min-height:100vh}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+  header{position:sticky;top:0;z-index:20;background:rgba(11,14,20,.78);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .nav{display:flex;align-items:center;gap:24px;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#8a6bff);
+    display:grid;place-items:center;font-family:"Inter";font-weight:800;font-size:15px;color:#fff;box-shadow:0 4px 14px rgba(91,140,255,.4)}
+  .brand small{display:block;font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.02em;margin-top:-2px}
+  .nav .links{display:flex;gap:6px;margin-left:auto}
+  .nav .links a{padding:8px 14px;border-radius:10px;font-size:14px;font-weight:600;color:var(--muted);transition:.15s}
+  .nav .links a:hover{color:var(--text);background:var(--bg-soft)}
+  .nav .links a.active{color:var(--accent);background:var(--accent-soft)}
+  .hero{padding:48px 0 20px}
+  .hero h1{font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.25}
+  .hero p{color:var(--muted);margin-top:10px;font-size:15px;max-width:620px}
+  .hero .meta{margin-top:18px;display:flex;gap:18px;color:var(--faint);font-size:13px;flex-wrap:wrap}
+  .hero .meta b{color:var(--text)}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin:38px 0 16px}
+  .sec-head h2{font-size:19px;font-weight:800;letter-spacing:-.02em}
+  .sec-head span{color:var(--faint);font-size:13px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:.18s;display:flex;flex-direction:column;gap:10px}
+  .card:hover{background:var(--card-hover);border-color:#31405e;transform:translateY(-2px)}
+  .card .tags{display:flex;gap:6px;flex-wrap:wrap}
+  .tag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent)}
+  .tag.g{background:rgba(78,203,141,.14);color:var(--green)}
+  .tag.a{background:rgba(242,180,90,.14);color:var(--amber)}
+  .card h3{font-size:16.5px;font-weight:700;letter-spacing:-.01em;line-height:1.4}
+  .card .excerpt{color:var(--muted);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .card .foot{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:6px;font-size:13px;color:var(--faint)}
+  .avatar{width:22px;height:22px;border-radius:50%;background:#26304a;display:grid;place-items:center;font-size:11px;font-weight:700;color:#cdd6ea}
+  .card .foot .who{color:var(--muted);font-weight:600}
+  .week-block{margin-bottom:34px}
+  .week-tag{display:inline-block;font-size:12px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:5px 12px;border-radius:8px;margin-bottom:14px}
+  .authors{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:640px){.authors{grid-template-columns:repeat(2,1fr)}}
+  .author-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;cursor:pointer;transition:.18s}
+  .author-card:hover{background:var(--card-hover);transform:translateY(-2px);border-color:#31405e}
+  .author-card .avatar{width:46px;height:46px;font-size:17px;margin:0 auto 10px}
+  .author-card .nm{font-weight:700;font-size:15px}
+  .author-card .ct{color:var(--faint);font-size:12.5px;margin-top:3px}
+  .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;font-weight:600;margin:28px 0 8px;cursor:pointer}
+  .back:hover{color:var(--accent)}
+  .article{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:34px;margin-top:6px}
+  .article h1{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.35;margin-bottom:14px}
+  .article .abyline{display:flex;align-items:center;gap:10px;color:var(--faint);font-size:13.5px;margin-bottom:22px;flex-wrap:wrap}
+  .article .abyline .who{color:var(--text);font-weight:600}
+  .article h4{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:.04em;text-transform:uppercase;margin:26px 0 8px}
+  .article p{color:var(--text);font-size:15.5px;line-height:1.8;white-space:pre-wrap}
+  .article .insight{background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:14px 18px;margin-top:6px}
+  .article .insight p{color:#dbe4ff}
+  .src{display:inline-flex;align-items:center;gap:7px;margin-top:26px;padding:10px 16px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-weight:600;color:var(--muted);transition:.15s}
+  .src:hover{color:var(--accent);border-color:var(--accent)}
+  footer{border-top:1px solid var(--border);margin-top:60px;padding:30px 0;color:var(--faint);font-size:13px;text-align:center}
+  .empty{color:var(--faint);padding:40px 0;text-align:center;font-size:14px}
+  .loading{padding:80px 0;text-align:center;color:var(--muted)}
+  .spinner{width:26px;height:26px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .banner{background:rgba(242,180,90,.12);border:1px solid rgba(242,180,90,.35);color:#f2b45a;font-size:13px;padding:10px 16px;border-radius:10px;margin-top:16px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a href="#/" class="brand">
+      <span class="mark">B</span>
+      <span>BAY 리서치팀<small>Blockchain at Yonsei · 뉴스트래킹</small></span>
+    </a>
+    <nav class="links">
+      <a href="#/" data-route="home">최신</a>
+      <a href="#/weeks" data-route="weeks">주차별</a>
+      <a href="#/authors" data-route="authors">작성자</a>
+    </nav>
+  </div>
+</header>
+
+<main id="app" class="wrap"></main>
+
+<footer><div class="wrap">BAY 리서치팀 뉴스트래킹 아카이브</div></footer>
+
+<script>
+/* =========================================================================
+   이 사이트는 노션 데이터베이스에서 데이터를 읽어옵니다.
+   데이터는 /api/posts (중계 함수)가 노션에서 가져와 돌려줍니다.
+   ▶ 노션 연결 설정은 코드가 아니라 Vercel 환경변수에서 합니다 (README 참고).
+   ▶ 로컬에서 이 파일만 열면 함수가 없어 아래 샘플 데이터로 보입니다.
+   ========================================================================= */
+
+/* 배포 전(로컬 미리보기)에 쓰이는 샘플 데이터 */
+const SAMPLE = [
+  {id:1,title:"홍콩 SFC, 토큰화 RWA 펀드 첫 승인 — 제도권 진입 신호탄",author:"노제희",week:2,tags:["RWA","규제동향"],date:"2026-07-18",
+   summary:"홍콩 증권선물위원회(SFC)가 토큰화된 실물자산(RWA) 펀드를 처음으로 정식 승인했다. 국채·회사채를 온체인 토큰으로 발행·거래할 수 있게 되면서 기관 투자자의 온체인 진입 문턱이 크게 낮아졌다는 평가.",
+   insight:"그동안 RWA는 규제 불확실성 때문에 파일럿에 머물렀는데, 이번 승인은 아시아 금융허브가 제도적으로 RWA를 인정했다는 점에서 의미가 크다. 한국 당국의 향후 스탠스를 가늠할 레퍼런스가 될 듯.",source:"https://example.com/sfc-rwa"},
+  {id:2,title:"이더리움 재스테이킹 TVL 사상 최고 — 리스크는?",author:"이재환",week:2,tags:["프로젝트","DeFi"],date:"2026-07-17",
+   summary:"리스테이킹 프로토콜의 총예치금(TVL)이 사상 최고치를 경신했다. 수익률 경쟁이 과열되며 담보 중복 사용에 따른 연쇄 청산 위험을 우려하는 목소리도 커지고 있다.",
+   insight:"수익률만 보고 들어가기엔 슬래싱 리스크가 겹겹이 쌓인 구조. 예치금 규모보다 담보 재사용 배수를 봐야 진짜 리스크가 보인다.",source:"https://example.com/restaking"},
+  {id:3,title:"美 스테이블코인 법안 상원 통과 — 발행 요건 대폭 강화",author:"배예림",week:2,tags:["규제동향"],date:"2026-07-16",
+   summary:"미국 상원이 스테이블코인 규제 법안을 통과시켰다. 100% 준비금 보유와 정기 감사가 의무화되며 비은행 발행사의 진입 요건도 명확해졌다.",
+   insight:"준비금 투명성이 법제화되면 신뢰도 높은 소수 발행사로 시장이 재편될 가능성. 알고리즘형 스테이블코인엔 사실상 사형선고에 가깝다.",source:"https://example.com/stablecoin-bill"},
+  {id:4,title:"베이스(Base) 온체인 활성 지갑, 옵티미즘 추월",author:"장동현",week:1,tags:["프로젝트","L2"],date:"2026-07-11",
+   summary:"코인베이스의 L2 네트워크 베이스의 일일 활성 지갑 수가 옵티미즘을 넘어섰다. 거래소 연동 온보딩과 낮은 수수료가 성장 동력으로 꼽힌다.",
+   insight:"L2 경쟁의 승부처는 결국 유저 유입 파이프라인. 거래소를 등에 업은 베이스의 성장은 기술력보다 유통 채널의 힘을 보여주는 사례.",source:"https://example.com/base-growth"},
+  {id:5,title:"쟁글, RWA 프로젝트 시리즈 리포트 3편 공개",author:"이성재",week:1,tags:["RWA"],date:"2026-07-10",
+   summary:"온체인 데이터 플랫폼 쟁글이 RWA 대표 프로젝트를 분석한 시리즈 리포트 3편을 공개했다. 국채 토큰화, 부동산, 사모신용 세 섹터를 다뤘다.",
+   insight:"섹터별 온체인화 난이도가 완전히 다르다는 점이 핵심. 국채는 표준화가 쉬워 빠르게 크지만 부동산은 법적 소유권 이슈로 아직 갈 길이 멀다.",source:"https://example.com/xangle-rwa"},
+  {id:6,title:"SEC, 현물 이더리움 ETF 스테이킹 허용 검토",author:"김재성",week:1,tags:["규제동향","프로젝트"],date:"2026-07-09",
+   summary:"미국 SEC가 현물 이더리움 ETF의 스테이킹 기능 포함 여부를 검토 중인 것으로 알려졌다. 승인 시 ETF 투자자도 스테이킹 수익을 받을 수 있게 된다.",
+   insight:"ETF에 스테이킹이 붙으면 이자 붙는 이더리움 상품이 되는 셈. 전통 운용사에게 크립토가 채권 대체재로 보이기 시작할 변곡점.",source:"https://example.com/eth-etf-staking"},
+  {id:7,title:"한국 금융위, 법인 가상자산 계좌 단계적 허용 발표",author:"박의혁",week:1,tags:["규제동향"],date:"2026-07-08",
+   summary:"금융위원회가 법인의 가상자산 거래소 실명계좌 개설을 단계적으로 허용한다고 밝혔다. 비영리법인·거래소를 시작으로 일반 법인까지 확대할 계획이다.",
+   insight:"국내 기관 자금이 합법적으로 온체인에 들어올 통로가 열린다는 의미. 다만 회계·세무 가이드라인이 함께 정비돼야 실제 자금이 움직일 것.",source:"https://example.com/kr-corporate"},
+  {id:8,title:"솔라나 기반 DePIN 프로젝트, 통신 인프라로 확장",author:"장윤선",week:2,tags:["프로젝트"],date:"2026-07-15",
+   summary:"솔라나 생태계의 대표 DePIN(탈중앙 물리 인프라) 프로젝트가 무선 통신 커버리지 사업으로 영역을 넓혔다. 토큰 인센티브로 개인 기지국 참여를 유도하는 모델.",
+   insight:"DePIN은 토큰으로 실물 인프라를 부트스트랩하는 실험. 초기 보상에 의존한 성장이 보상 축소 이후에도 유지되는지가 진짜 시험대다.",source:"https://example.com/depin"}
+];
+
+/* ---- 상태 ---- */
+let POSTS = [];
+let USING_SAMPLE = false;
+
+/* ---- 유틸 ---- */
+const $app = document.getElementById("app");
+const initial = (name) => (name||"").slice(-2);
+const tagClass = (t) => t.includes("규제") ? "g" : (["프로젝트","DeFi","L2","프로젝트분석"].includes(t) ? "a" : "");
+const fmtDate = (d) => { if(!d||d.indexOf("-")<0) return d||""; const [,m,day]=d.split("-"); return `${m}.${day}`; };
+// 발행일(YYYY-MM-DD)로 그 주(일~토) 범위를 계산 -> {label:"2026.04.05~04.11", start:"2026-04-05"}
+function deriveWeek(dateStr){
+  if(!dateStr||dateStr.indexOf("-")<0) return {label:"미분류", start:"0000-00-00"};
+  const d=new Date(dateStr+"T00:00:00"); if(isNaN(d)) return {label:"미분류", start:"0000-00-00"};
+  const s=new Date(d); s.setDate(d.getDate()-d.getDay());
+  const e=new Date(s); e.setDate(s.getDate()+6);
+  const p2=n=>String(n).padStart(2,"0");
+  const f=x=>`${x.getFullYear()}.${p2(x.getMonth()+1)}.${p2(x.getDate())}`;
+  const fe=x=>`${p2(x.getMonth()+1)}.${p2(x.getDate())}`;
+  return {label:`${f(s)}~${fe(e)}`, start:`${s.getFullYear()}-${p2(s.getMonth()+1)}-${p2(s.getDate())}`};
+}
+const tagsHtml = (tags)=>`<div class="tags">${tags.map(t=>`<span class="tag ${tagClass(t)}">${t}</span>`).join("")}</div>`;
+
+function cardHtml(p){
+  return `<article class="card" onclick="location.hash='#/post/${p.id}'">
+    ${tagsHtml(p.tags)}
+    <h3>${p.title}</h3>
+    <p class="excerpt">${p.summary}</p>
+    <div class="foot"><span class="avatar">${initial(p.author)}</span>
+      <span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span></div>
+  </article>`;
+}
+
+/* ---- 화면들 ---- */
+function viewHome(){
+  const sorted = [...POSTS].sort((a,b)=> String(b.date).localeCompare(String(a.date)));
+  const banner = USING_SAMPLE ? `<div class="banner">⚙️ 지금은 샘플 데이터로 보이는 중이에요. 노션 연결·배포가 끝나면 실제 데이터가 표시됩니다.</div>`:"";
+  return `<section class="hero">
+    <h1>이번 주, 크립토에서 무슨 일이?</h1>
+    <p>BAY 리서치팀이 매주 추적한 블록체인·크립토 뉴스와 인사이트를 한곳에 모았습니다.</p>
+    <div class="meta"><span>총 <b>${POSTS.length}</b>개 트래킹</span><span>작성자 <b>${new Set(POSTS.map(p=>p.author).filter(Boolean)).size}</b>명</span><span>운영 <b>${new Set(POSTS.map(p=>deriveWeek(p.date).start)).size}</b>주</span></div>
+    ${banner}
+  </section>
+  <div class="sec-head"><h2>최신 뉴스트래킹</h2><span>최근 업데이트 순</span></div>
+  <div class="grid">${sorted.map(cardHtml).join("")}</div>`;
+}
+function viewWeeks(){
+  const starts=[...new Set(POSTS.map(p=>deriveWeek(p.date).start))].sort((a,b)=>b.localeCompare(a));
+  return `<div class="sec-head" style="margin-top:34px"><h2>주차별 아카이브</h2><span>주 단위(일~토)로 모아보기</span></div>
+  ${starts.map(st=>{const items=POSTS.filter(p=>deriveWeek(p.date).start===st).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+    const label=items.length?deriveWeek(items[0].date).label:st;
+    return `<div class="week-block"><span class="week-tag">${label} · ${items.length}건</span><div class="grid">${items.map(cardHtml).join("")}</div></div>`;}).join("")}`;
+}
+function viewAuthors(){
+  const map={};POSTS.forEach(p=>{(map[p.author]=map[p.author]||[]).push(p);});
+  const names=Object.keys(map).sort((a,b)=>map[b].length-map[a].length);
+  return `<div class="sec-head" style="margin-top:34px"><h2>작성자</h2><span>팀원별 아카이빙</span></div>
+  <div class="authors">${names.map(n=>`<div class="author-card" onclick="location.hash='#/author/${encodeURIComponent(n)}'">
+    <div class="avatar">${initial(n)}</div><div class="nm">${n}</div><div class="ct">트래킹 ${map[n].length}건</div></div>`).join("")}</div>`;
+}
+function viewAuthor(name){
+  const items=POSTS.filter(p=>p.author===name).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  return `<div class="back" onclick="location.hash='#/authors'">← 작성자 목록</div>
+  <section class="hero" style="padding:14px 0 6px"><h1 style="display:flex;align-items:center;gap:14px"><span class="avatar" style="width:44px;height:44px;font-size:17px">${initial(name)}</span>${name}</h1>
+  <p>${name} 님이 트래킹한 뉴스 ${items.length}건</p></section>
+  <div class="grid" style="margin-top:16px">${items.length?items.map(cardHtml).join(""):'<p class="empty">아직 작성한 트래킹이 없습니다.</p>'}</div>`;
+}
+function viewPost(id){
+  const p=POSTS.find(x=>String(x.id)===String(id));
+  if(!p) return `<p class="empty">글을 찾을 수 없습니다.</p>`;
+  const src=p.source?`<a class="src" href="${p.source}" target="_blank" rel="noopener">🔗 원문 보기</a>`:"";
+  return `<div class="back" onclick="history.length>1?history.back():location.hash='#/'">← 목록으로</div>
+  <article class="article">${tagsHtml(p.tags)}
+    <h1 style="margin-top:12px">${p.title}</h1>
+    <div class="abyline"><span class="avatar">${initial(p.author)}</span><span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span></div>
+    <h4>요약</h4><p>${p.summary}</p>
+    <h4>인사이트</h4><div class="insight"><p>${p.insight}</p></div>
+    ${src}</article>`;
+}
+
+/* ---- 라우터 ---- */
+function router(){
+  const hash=location.hash||"#/";
+  const [route,arg]=hash.replace(/^#\//,"").split("/");
+  let html,active="home";
+  if(!route){html=viewHome();active="home";}
+  else if(route==="weeks"){html=viewWeeks();active="weeks";}
+  else if(route==="authors"){html=viewAuthors();active="authors";}
+  else if(route==="author"){html=viewAuthor(decodeURIComponent(arg||""));active="authors";}
+  else if(route==="post"){html=viewPost(arg);active="";}
+  else{html=viewHome();}
+  $app.innerHTML=html;
+  document.querySelectorAll(".links a").forEach(a=>a.classList.toggle("active",a.dataset.route===active));
+  window.scrollTo(0,0);
+}
+window.addEventListener("hashchange", router);
+
+/* ---- 데이터 로드 (노션 or 샘플) ----
+   /api/posts = 노션에서 데이터를 가져오는 중계 함수 (배포 후 작동).
+   로컬에서 파일만 열면 함수가 없어 위 SAMPLE 로 보입니다. */
+function loadData(){
+  $app.innerHTML=`<div class="loading"><div class="spinner"></div>데이터를 불러오는 중…</div>`;
+  fetch("/api/posts")
+    .then(r=>{ if(!r.ok) throw new Error("no api"); return r.json(); })
+    .then(data=>{
+      if(Array.isArray(data) && data.length){ POSTS=data; USING_SAMPLE=false; }
+      else { POSTS=SAMPLE; USING_SAMPLE=true; }
+      router();
+    })
+    .catch(()=>{ POSTS=SAMPLE; USING_SAMPLE=true; router(); });
+}
+loadData();
+</script>
+</body>
+</html>
