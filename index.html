@@ -238,11 +238,12 @@ let USING_SAMPLE = false;
 /* ---- 유틸 ---- */
 const $app = document.getElementById("app");
 const initial = (name) => (name||"").slice(-2);
-// 작성자 아바타: assets/authors/<이름>.png(또는 .jpg)가 있으면 사진, 없으면 이니셜로 자동 폴백
+// 작성자 아바타: authors/ 또는 assets/authors/ 폴더의 <이름>.png/.jpg를 순서대로 시도, 없으면 이니셜로 폴백
 function avatarHtml(name, style){
-  const base = "assets/authors/" + encodeURIComponent(name||"");
+  const n = encodeURIComponent(name||"");
+  const list = ["authors/"+n+".png","authors/"+n+".jpg","assets/authors/"+n+".png","assets/authors/"+n+".jpg"];
   const st = style ? ` style="${style}"` : "";
-  return `<span class="avatar"${st}><img src="${base}.png" alt="" loading="lazy" onerror="if(!this.dataset.f){this.dataset.f=1;this.src='${base}.jpg';}else{this.style.display='none';}">${initial(name)}</span>`;
+  return `<span class="avatar"${st}><img src="${list[0]}" alt="" loading="lazy" data-i="0" data-list="${list.join("|")}" onerror="var l=this.dataset.list.split('|'),i=+this.dataset.i+1;if(i&lt;l.length){this.dataset.i=i;this.src=l[i];}else{this.style.display='none';}">${initial(name)}</span>`;
 }
 const tagClass = (t) => t.includes("규제") ? "g" : (["프로젝트","DeFi","L2","프로젝트분석"].includes(t) ? "a" : "");
 const fmtDate = (d) => { if(!d||d.indexOf("-")<0) return d||""; const [,m,day]=d.split("-"); return `${m}.${day}`; };
