@@ -54,9 +54,20 @@
   .brand .bt b{font-size:15.5px;font-weight:800;color:var(--text)}
   .brand small{display:block;font-size:11px;font-weight:600;color:var(--faint);letter-spacing:.01em;margin-top:1px}
   .nav .links{display:flex;gap:4px;margin-left:auto}
-  .nav .links a{padding:8px 14px;border-radius:10px;font-size:14px;font-weight:700;color:var(--muted);transition:.15s}
+  .nav .links a{padding:8px 14px;border-radius:10px;font-size:14px;font-weight:700;color:var(--muted);transition:.15s;white-space:nowrap}
   .nav .links a:hover{color:var(--text);background:var(--bg-soft)}
   .nav .links a.active{color:var(--accent);background:var(--accent-soft)}
+  /* 모바일: 헤더를 컴팩트하게 — 메뉴가 가로 한 줄 유지 (PC는 영향 없음) */
+  @media(max-width:600px){
+    .nav{gap:10px;height:58px}
+    .brand{gap:8px}
+    .brand .mark{width:28px;height:28px;flex:0 0 28px}
+    .brand .bt b{font-size:14px;white-space:nowrap}
+    .brand small{display:none}
+    .nav .links{gap:2px}
+    .nav .links a{padding:7px 9px;font-size:13px}
+    .hero h1 .hbr{display:inline}
+  }
 
   /* ---------- hero ---------- */
   .hero{position:relative;padding:56px 0 26px}
@@ -67,6 +78,7 @@
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(11,92,255,.45)}70%{box-shadow:0 0 0 8px rgba(11,92,255,0)}100%{box-shadow:0 0 0 0 rgba(11,92,255,0)}}
   .hero h1{font-size:35px;font-weight:900;letter-spacing:-.035em;line-height:1.22}
   .hero h1 .hl{background:linear-gradient(100deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero h1 .hbr{display:none}
   .hero p{color:var(--muted);margin-top:14px;font-size:16px;max-width:560px}
   .hero .meta{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap}
   .hero .meta .chip{display:inline-flex;align-items:baseline;gap:6px;background:#fff;border:1px solid var(--border);
@@ -262,7 +274,7 @@ function viewHome(){
       <div class="crystals" id="cssCrystals" style="display:none"><span class="cube c1"></span><span class="cube c2"></span><span class="cube c3"></span></div>
     </div>
     <div class="hcopy">
-      <h1><span class="hl">Blockchain</span> Weekly Brief</h1>
+      <h1><span class="hl">Blockchain</span><br class="hbr"> Weekly Brief</h1>
       <div class="meta">
         <span class="chip"><b>${POSTS.length}</b> 트래킹</span>
         <span class="chip"><b>${new Set(POSTS.map(p=>p.author).filter(Boolean)).size}</b> 작성자</span>
