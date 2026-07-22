@@ -7,86 +7,152 @@
 <title>BAY 리서치팀 · 뉴스트래킹</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#0b0e14;--bg-soft:#11151f;--card:#151a26;--card-hover:#1b2130;--border:#232a3a;
-    --text:#e8ecf4;--muted:#9aa6bd;--faint:#69748c;--accent:#5b8cff;--accent-soft:rgba(91,140,255,.14);
-    --green:#4ecb8d;--amber:#f2b45a;--radius:16px;--maxw:960px;
+    --bg:#ffffff;--bg-soft:#f4f6fb;--card:#ffffff;--card-hover:#fbfcff;--border:#e7eaf1;--border-strong:#d7dce8;
+    --text:#0d1220;--muted:#5a6478;--faint:#8a93a6;
+    --accent:#0b5cff;--accent-2:#2ea6ff;--accent-deep:#0a3ecc;--accent-soft:rgba(11,92,255,.08);--accent-soft2:rgba(11,92,255,.14);
+    --green:#0f9d63;--green-soft:rgba(15,157,99,.12);--amber:#d1810f;--amber-soft:rgba(209,129,15,.12);
+    --radius:16px;--maxw:960px;--shadow:0 1px 2px rgba(13,18,32,.04),0 8px 24px rgba(13,18,32,.05);--shadow-hover:0 4px 10px rgba(11,92,255,.08),0 18px 40px rgba(13,18,32,.10);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   body{font-family:"Noto Sans KR","Inter",system-ui,sans-serif;
-    background:radial-gradient(1200px 600px at 50% -200px,#141b2b 0%,var(--bg) 60%);
+    background:
+      radial-gradient(900px 480px at 88% -160px,rgba(46,166,255,.10) 0%,rgba(46,166,255,0) 60%),
+      radial-gradient(1000px 520px at 8% -220px,rgba(11,92,255,.09) 0%,rgba(11,92,255,0) 62%),
+      var(--bg);
     color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased;min-height:100vh}
   a{color:inherit;text-decoration:none}
   .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
-  header{position:sticky;top:0;z-index:20;background:rgba(11,14,20,.78);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
-  .nav{display:flex;align-items:center;gap:24px;height:64px}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em}
-  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#8a6bff);
-    display:grid;place-items:center;font-family:"Inter";font-weight:800;font-size:15px;color:#fff;box-shadow:0 4px 14px rgba(91,140,255,.4)}
-  .brand small{display:block;font-size:11px;font-weight:500;color:var(--muted);letter-spacing:.02em;margin-top:-2px}
-  .nav .links{display:flex;gap:6px;margin-left:auto}
-  .nav .links a{padding:8px 14px;border-radius:10px;font-size:14px;font-weight:600;color:var(--muted);transition:.15s}
+
+  /* ---------- header ---------- */
+  header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+  .nav{display:flex;align-items:center;gap:24px;height:66px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:-.02em}
+  .brand .mark{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center}
+  .brand .mark svg{width:100%;height:100%;display:block}
+  .brand .mark img{width:100%;height:100%;object-fit:contain;display:block}
+  .brand .bt{display:block;line-height:1.15}
+  .brand .bt b{font-size:15.5px;font-weight:800;color:var(--text)}
+  .brand small{display:block;font-size:11px;font-weight:600;color:var(--faint);letter-spacing:.01em;margin-top:1px}
+  .nav .links{display:flex;gap:4px;margin-left:auto}
+  .nav .links a{padding:8px 14px;border-radius:10px;font-size:14px;font-weight:700;color:var(--muted);transition:.15s}
   .nav .links a:hover{color:var(--text);background:var(--bg-soft)}
   .nav .links a.active{color:var(--accent);background:var(--accent-soft)}
-  .hero{padding:48px 0 20px}
-  .hero h1{font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.25}
-  .hero p{color:var(--muted);margin-top:10px;font-size:15px;max-width:620px}
-  .hero .meta{margin-top:18px;display:flex;gap:18px;color:var(--faint);font-size:13px;flex-wrap:wrap}
-  .hero .meta b{color:var(--text)}
-  .sec-head{display:flex;align-items:baseline;gap:12px;margin:38px 0 16px}
-  .sec-head h2{font-size:19px;font-weight:800;letter-spacing:-.02em}
-  .sec-head span{color:var(--faint);font-size:13px}
+
+  /* ---------- hero ---------- */
+  .hero{position:relative;padding:56px 0 26px;overflow:hidden}
+  .hero .hcopy{position:relative;z-index:2;max-width:600px}
+  .hero .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;letter-spacing:.02em;
+    color:var(--accent);background:var(--accent-soft);padding:6px 12px;border-radius:999px;margin-bottom:16px}
+  .hero .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(11,92,255,.5);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(11,92,255,.45)}70%{box-shadow:0 0 0 8px rgba(11,92,255,0)}100%{box-shadow:0 0 0 0 rgba(11,92,255,0)}}
+  .hero h1{font-size:35px;font-weight:900;letter-spacing:-.035em;line-height:1.22}
+  .hero h1 .hl{background:linear-gradient(100deg,var(--accent),var(--accent-2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero p{color:var(--muted);margin-top:14px;font-size:16px;max-width:560px}
+  .hero .meta{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap}
+  .hero .meta .chip{display:inline-flex;align-items:baseline;gap:6px;background:#fff;border:1px solid var(--border);
+    border-radius:12px;padding:9px 14px;font-size:13px;color:var(--muted);box-shadow:var(--shadow)}
+  .hero .meta .chip b{font-size:18px;font-weight:900;color:var(--text);letter-spacing:-.02em;font-family:"Inter"}
+
+  /* ---------- hero crystal animation ---------- */
+  .hero-art{position:absolute;top:0;right:-10px;width:340px;height:100%;z-index:1;pointer-events:none;display:grid;place-items:center}
+  .hero-art .glow{position:absolute;width:280px;height:280px;border-radius:50%;
+    background:radial-gradient(circle,rgba(46,166,255,.28) 0%,rgba(11,92,255,.10) 45%,rgba(11,92,255,0) 70%);
+    filter:blur(6px);animation:breathe 5s ease-in-out infinite}
+  @keyframes breathe{0%,100%{transform:scale(.92);opacity:.75}50%{transform:scale(1.08);opacity:1}}
+  .crystals{position:relative;width:220px;height:220px}
+  .cube{position:absolute;width:74px;height:74px;border-radius:12px;
+    background:linear-gradient(150deg,#5fbcff 0%,#1f74ff 45%,#0a3ecc 100%);
+    box-shadow:inset 0 2px 8px rgba(255,255,255,.55),inset 0 -10px 18px rgba(6,32,120,.55),0 14px 30px rgba(11,92,255,.35);
+    border:1px solid rgba(255,255,255,.35)}
+  .cube::before{content:"";position:absolute;inset:8px 8px auto 8px;height:26px;border-radius:8px;
+    background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,0))}
+  .cube.c1{top:22px;left:26px;animation:float1 6s ease-in-out infinite}
+  .cube.c2{top:78px;left:104px;width:64px;height:64px;animation:float2 6.6s ease-in-out infinite}
+  .cube.c3{top:132px;left:34px;width:58px;height:58px;animation:float3 7.2s ease-in-out infinite}
+  @keyframes float1{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-14px) rotate(2deg)}}
+  @keyframes float2{0%,100%{transform:translateY(-6px) rotate(3deg)}50%{transform:translateY(10px) rotate(-2deg)}}
+  @keyframes float3{0%,100%{transform:translateY(4px) rotate(-2deg)}50%{transform:translateY(-12px) rotate(3deg)}}
+  /* 실제 크리스탈 이미지를 넣으면 아래로 자동 대체됩니다 */
+  .hero-art img.crystal-img{position:relative;width:auto;max-width:320px;max-height:250px;filter:drop-shadow(0 22px 38px rgba(11,92,255,.34));animation:floatImg 6.5s ease-in-out infinite}
+  @keyframes floatImg{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-16px) rotate(1.5deg)}}
+  @media(max-width:760px){.hero-art{display:none}.hero .hcopy{max-width:none}}
+  @media(prefers-reduced-motion:reduce){.cube,.crystals .cube,.glow,.crystal-img,.hero .eyebrow .dot{animation:none!important}}
+
+  /* ---------- sections ---------- */
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin:40px 0 18px}
+  .sec-head h2{font-size:20px;font-weight:900;letter-spacing:-.025em}
+  .sec-head span{color:var(--faint);font-size:13px;font-weight:600}
   .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
   @media(max-width:640px){.grid{grid-template-columns:1fr}}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:.18s;display:flex;flex-direction:column;gap:10px}
-  .card:hover{background:var(--card-hover);border-color:#31405e;transform:translateY(-2px)}
+
+  /* ---------- cards ---------- */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;
+    transition:transform .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s,border-color .2s;display:flex;flex-direction:column;gap:10px;
+    box-shadow:var(--shadow);opacity:0;transform:translateY(10px);animation:cardIn .5s cubic-bezier(.2,.7,.3,1) forwards}
+  @keyframes cardIn{to{opacity:1;transform:translateY(0)}}
+  .card:hover{border-color:var(--border-strong);transform:translateY(-4px);box-shadow:var(--shadow-hover)}
   .card .tags{display:flex;gap:6px;flex-wrap:wrap}
-  .tag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--accent-soft);color:var(--accent)}
-  .tag.g{background:rgba(78,203,141,.14);color:var(--green)}
-  .tag.a{background:rgba(242,180,90,.14);color:var(--amber)}
-  .card h3{font-size:16.5px;font-weight:700;letter-spacing:-.01em;line-height:1.4}
+  .tag{font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;background:var(--accent-soft2);color:var(--accent);letter-spacing:.01em}
+  .tag.g{background:var(--green-soft);color:var(--green)}
+  .tag.a{background:var(--amber-soft);color:var(--amber)}
+  .card h3{font-size:16.5px;font-weight:800;letter-spacing:-.015em;line-height:1.4;transition:color .15s}
+  .card:hover h3{color:var(--accent)}
   .card .excerpt{color:var(--muted);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .card .foot{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:6px;font-size:13px;color:var(--faint)}
-  .avatar{width:22px;height:22px;border-radius:50%;background:#26304a;display:grid;place-items:center;font-size:11px;font-weight:700;color:#cdd6ea}
-  .card .foot .who{color:var(--muted);font-weight:600}
+  .avatar{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff}
+  .card .foot .who{color:var(--muted);font-weight:700}
+
   .week-block{margin-bottom:34px}
-  .week-tag{display:inline-block;font-size:12px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:5px 12px;border-radius:8px;margin-bottom:14px}
+  .week-tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:6px 13px;border-radius:9px;margin-bottom:14px}
   .authors{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
   @media(max-width:640px){.authors{grid-template-columns:repeat(2,1fr)}}
-  .author-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;cursor:pointer;transition:.18s}
-  .author-card:hover{background:var(--card-hover);transform:translateY(-2px);border-color:#31405e}
-  .author-card .avatar{width:46px;height:46px;font-size:17px;margin:0 auto 10px}
-  .author-card .nm{font-weight:700;font-size:15px}
-  .author-card .ct{color:var(--faint);font-size:12.5px;margin-top:3px}
-  .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;font-weight:600;margin:28px 0 8px;cursor:pointer}
-  .back:hover{color:var(--accent)}
-  .article{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:34px;margin-top:6px}
-  .article h1{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.35;margin-bottom:14px}
+  .author-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;cursor:pointer;
+    transition:transform .2s,box-shadow .2s,border-color .2s;box-shadow:var(--shadow)}
+  .author-card:hover{transform:translateY(-4px);border-color:var(--border-strong);box-shadow:var(--shadow-hover)}
+  .author-card .avatar{width:48px;height:48px;font-size:18px;margin:0 auto 11px}
+  .author-card .nm{font-weight:800;font-size:15px}
+  .author-card .ct{color:var(--faint);font-size:12.5px;margin-top:3px;font-weight:600}
+
+  .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;font-weight:700;margin:28px 0 8px;cursor:pointer;transition:.15s}
+  .back:hover{color:var(--accent);gap:9px}
+  .article{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:34px;margin-top:6px;box-shadow:var(--shadow)}
+  .article h1{font-size:27px;font-weight:900;letter-spacing:-.025em;line-height:1.35;margin-bottom:14px}
   .article .abyline{display:flex;align-items:center;gap:10px;color:var(--faint);font-size:13.5px;margin-bottom:22px;flex-wrap:wrap}
-  .article .abyline .who{color:var(--text);font-weight:600}
-  .article h4{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:.04em;text-transform:uppercase;margin:26px 0 8px}
-  .article p{color:var(--text);font-size:15.5px;line-height:1.8;white-space:pre-wrap}
-  .article .insight{background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:14px 18px;margin-top:6px}
-  .article .insight p{color:#dbe4ff}
-  .src{display:inline-flex;align-items:center;gap:7px;margin-top:26px;padding:10px 16px;border:1px solid var(--border);border-radius:10px;font-size:14px;font-weight:600;color:var(--muted);transition:.15s}
-  .src:hover{color:var(--accent);border-color:var(--accent)}
-  footer{border-top:1px solid var(--border);margin-top:60px;padding:30px 0;color:var(--faint);font-size:13px;text-align:center}
+  .article .abyline .who{color:var(--text);font-weight:700}
+  .article h4{font-size:12px;font-weight:900;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;margin:26px 0 8px}
+  .article p{color:var(--text);font-size:15.5px;line-height:1.85;white-space:pre-wrap}
+  .article .insight{background:linear-gradient(180deg,var(--accent-soft),rgba(11,92,255,.03));border-left:3px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 20px;margin-top:6px}
+  .article .insight p{color:#0f2c66}
+  .src{display:inline-flex;align-items:center;gap:7px;margin-top:26px;padding:11px 17px;border:1px solid var(--border-strong);border-radius:11px;font-size:14px;font-weight:700;color:var(--muted);transition:.15s}
+  .src:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+
+  footer{border-top:1px solid var(--border);margin-top:64px;padding:32px 0;color:var(--faint);font-size:13px;text-align:center;font-weight:600}
   .empty{color:var(--faint);padding:40px 0;text-align:center;font-size:14px}
   .loading{padding:80px 0;text-align:center;color:var(--muted)}
   .spinner{width:26px;height:26px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .banner{background:rgba(242,180,90,.12);border:1px solid rgba(242,180,90,.35);color:#f2b45a;font-size:13px;padding:10px 16px;border-radius:10px;margin-top:16px}
+  .banner{background:var(--amber-soft);border:1px solid rgba(209,129,15,.3);color:var(--amber);font-size:13px;font-weight:600;padding:11px 16px;border-radius:11px;margin-top:18px}
 </style>
 </head>
 <body>
 <header>
   <div class="wrap nav">
     <a href="#/" class="brand">
-      <span class="mark">B</span>
-      <span>BAY 리서치팀<small>Blockchain at Yonsei · 뉴스트래킹</small></span>
+      <span class="mark" id="brandMark">
+        <!-- 워드마크에서 잘라낸 마크(assets/logo-mark.png)가 있으면 사용, 없으면 아래 SVG 폴백 -->
+        <img src="assets/logo-mark.png" alt="BAY" onerror="this.remove();var f=document.getElementById('brandFallback');if(f)f.style.display='block'" />
+        <svg id="brandFallback" style="display:none" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="BAY">
+          <rect x="4" y="6" width="15" height="10" rx="2.5" fill="#0d1220"/>
+          <rect x="4" y="19" width="10" height="15" rx="2.5" fill="#0d1220"/>
+          <rect x="22" y="6" width="14" height="14" rx="3" fill="#0d1220"/>
+        </svg>
+      </span>
+      <span class="bt"><b>BAY 리서치팀</b><small>Blockchain at Yonsei · 뉴스트래킹</small></span>
     </a>
     <nav class="links">
       <a href="#/" data-route="home">최신</a>
@@ -98,7 +164,7 @@
 
 <main id="app" class="wrap"></main>
 
-<footer><div class="wrap">BAY 리서치팀 뉴스트래킹 아카이브</div></footer>
+<footer><div class="wrap">BAY 리서치팀 · 뉴스트래킹 아카이브 · Blockchain at Yonsei</div></footer>
 
 <script>
 /* =========================================================================
@@ -158,8 +224,9 @@ function deriveWeek(dateStr){
 }
 const tagsHtml = (tags)=>`<div class="tags">${tags.map(t=>`<span class="tag ${tagClass(t)}">${t}</span>`).join("")}</div>`;
 
-function cardHtml(p){
-  return `<article class="card" onclick="location.hash='#/post/${p.id}'">
+function cardHtml(p, i){
+  const delay = Math.min((i||0)*60, 480);
+  return `<article class="card" style="animation-delay:${delay}ms" onclick="location.hash='#/post/${p.id}'">
     ${tagsHtml(p.tags)}
     <h3>${p.title}</h3>
     <p class="excerpt">${p.summary}</p>
@@ -173,20 +240,32 @@ function viewHome(){
   const sorted = [...POSTS].sort((a,b)=> String(b.date).localeCompare(String(a.date)));
   const banner = USING_SAMPLE ? `<div class="banner">⚙️ 지금은 샘플 데이터로 보이는 중이에요. 노션 연결·배포가 끝나면 실제 데이터가 표시됩니다.</div>`:"";
   return `<section class="hero">
-    <h1>이번 주, 크립토에서 무슨 일이?</h1>
-    <p>BAY 리서치팀이 매주 추적한 블록체인·크립토 뉴스와 인사이트를 한곳에 모았습니다.</p>
-    <div class="meta"><span>총 <b>${POSTS.length}</b>개 트래킹</span><span>작성자 <b>${new Set(POSTS.map(p=>p.author).filter(Boolean)).size}</b>명</span><span>운영 <b>${new Set(POSTS.map(p=>deriveWeek(p.date).start)).size}</b>주</span></div>
-    ${banner}
+    <div class="hero-art" aria-hidden="true">
+      <div class="glow"></div>
+      <img class="crystal-img" src="assets/crystal.png" alt="" onerror="this.remove();var c=document.getElementById('cssCrystals');if(c)c.style.display='block'" />
+      <div class="crystals" id="cssCrystals" style="display:none"><span class="cube c1"></span><span class="cube c2"></span><span class="cube c3"></span></div>
+    </div>
+    <div class="hcopy">
+      <span class="eyebrow"><span class="dot"></span>매주 업데이트되는 크립토 리서치</span>
+      <h1>이번 주 크립토,<br><span class="hl">핵심만 짚어드립니다.</span></h1>
+      <p>BAY 리서치팀이 한 주간의 블록체인·크립토 흐름을 추적하고, 그 안에서 읽어낸 인사이트까지 아카이브합니다.</p>
+      <div class="meta">
+        <span class="chip"><b>${POSTS.length}</b> 트래킹</span>
+        <span class="chip"><b>${new Set(POSTS.map(p=>p.author).filter(Boolean)).size}</b> 작성자</span>
+        <span class="chip"><b>${new Set(POSTS.map(p=>deriveWeek(p.date).start)).size}</b> 주 아카이브</span>
+      </div>
+      ${banner}
+    </div>
   </section>
   <div class="sec-head"><h2>최신 뉴스트래킹</h2><span>최근 업데이트 순</span></div>
-  <div class="grid">${sorted.map(cardHtml).join("")}</div>`;
+  <div class="grid">${sorted.map((p,i)=>cardHtml(p,i)).join("")}</div>`;
 }
 function viewWeeks(){
   const starts=[...new Set(POSTS.map(p=>deriveWeek(p.date).start))].sort((a,b)=>b.localeCompare(a));
   return `<div class="sec-head" style="margin-top:34px"><h2>주차별 아카이브</h2><span>주 단위(일~토)로 모아보기</span></div>
   ${starts.map(st=>{const items=POSTS.filter(p=>deriveWeek(p.date).start===st).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
     const label=items.length?deriveWeek(items[0].date).label:st;
-    return `<div class="week-block"><span class="week-tag">${label} · ${items.length}건</span><div class="grid">${items.map(cardHtml).join("")}</div></div>`;}).join("")}`;
+    return `<div class="week-block"><span class="week-tag">${label} · ${items.length}건</span><div class="grid">${items.map((p,i)=>cardHtml(p,i)).join("")}</div></div>`;}).join("")}`;
 }
 function viewAuthors(){
   const map={};POSTS.forEach(p=>{(map[p.author]=map[p.author]||[]).push(p);});
@@ -198,9 +277,9 @@ function viewAuthors(){
 function viewAuthor(name){
   const items=POSTS.filter(p=>p.author===name).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   return `<div class="back" onclick="location.hash='#/authors'">← 작성자 목록</div>
-  <section class="hero" style="padding:14px 0 6px"><h1 style="display:flex;align-items:center;gap:14px"><span class="avatar" style="width:44px;height:44px;font-size:17px">${initial(name)}</span>${name}</h1>
-  <p>${name} 님이 트래킹한 뉴스 ${items.length}건</p></section>
-  <div class="grid" style="margin-top:16px">${items.length?items.map(cardHtml).join(""):'<p class="empty">아직 작성한 트래킹이 없습니다.</p>'}</div>`;
+  <section class="hero" style="padding:14px 0 6px"><div class="hcopy"><h1 style="display:flex;align-items:center;gap:14px;font-size:28px"><span class="avatar" style="width:46px;height:46px;font-size:18px">${initial(name)}</span>${name}</h1>
+  <p style="margin-top:8px">${name} 님이 트래킹한 뉴스 ${items.length}건</p></div></section>
+  <div class="grid" style="margin-top:16px">${items.length?items.map((p,i)=>cardHtml(p,i)).join(""):'<p class="empty">아직 작성한 트래킹이 없습니다.</p>'}</div>`;
 }
 function viewPost(id){
   const p=POSTS.find(x=>String(x.id)===String(id));
