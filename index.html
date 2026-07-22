@@ -132,7 +132,8 @@
   .card .excerpt{color:var(--muted);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .card .foot{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:6px;font-size:13px;color:var(--faint)}
   .avatar{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));
-    display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff}
+    display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;position:relative;overflow:hidden;flex:0 0 auto}
+  .avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
   .card .foot .who{color:var(--muted);font-weight:700}
 
   .week-block{margin-bottom:34px}
@@ -237,6 +238,12 @@ let USING_SAMPLE = false;
 /* ---- 유틸 ---- */
 const $app = document.getElementById("app");
 const initial = (name) => (name||"").slice(-2);
+// 작성자 아바타: assets/authors/<이름>.png(또는 .jpg)가 있으면 사진, 없으면 이니셜로 자동 폴백
+function avatarHtml(name, style){
+  const base = "assets/authors/" + encodeURIComponent(name||"");
+  const st = style ? ` style="${style}"` : "";
+  return `<span class="avatar"${st}><img src="${base}.png" alt="" loading="lazy" onerror="if(!this.dataset.f){this.dataset.f=1;this.src='${base}.jpg';}else{this.style.display='none';}">${initial(name)}</span>`;
+}
 const tagClass = (t) => t.includes("규제") ? "g" : (["프로젝트","DeFi","L2","프로젝트분석"].includes(t) ? "a" : "");
 const fmtDate = (d) => { if(!d||d.indexOf("-")<0) return d||""; const [,m,day]=d.split("-"); return `${m}.${day}`; };
 // 발행일(YYYY-MM-DD)로 그 주(일~토) 범위를 계산 -> {label:"2026.04.05~04.11", start:"2026-04-05"}
@@ -258,7 +265,7 @@ function cardHtml(p, i){
     ${tagsHtml(p.tags)}
     <h3>${p.title}</h3>
     <p class="excerpt">${p.summary}</p>
-    <div class="foot"><span class="avatar">${initial(p.author)}</span>
+    <div class="foot">${avatarHtml(p.author)}
       <span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span></div>
   </article>`;
 }
@@ -298,12 +305,12 @@ function viewAuthors(){
   const names=Object.keys(map).sort((a,b)=>map[b].length-map[a].length);
   return `<div class="sec-head" style="margin-top:34px"><h2>작성자</h2><span>팀원별 아카이빙</span></div>
   <div class="authors">${names.map(n=>`<div class="author-card" onclick="location.hash='#/author/${encodeURIComponent(n)}'">
-    <div class="avatar">${initial(n)}</div><div class="nm">${n}</div><div class="ct">트래킹 ${map[n].length}건</div></div>`).join("")}</div>`;
+    ${avatarHtml(n)}<div class="nm">${n}</div><div class="ct">트래킹 ${map[n].length}건</div></div>`).join("")}</div>`;
 }
 function viewAuthor(name){
   const items=POSTS.filter(p=>p.author===name).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   return `<div class="back" onclick="location.hash='#/authors'">← 작성자 목록</div>
-  <section class="hero" style="padding:14px 0 6px"><div class="hcopy"><h1 style="display:flex;align-items:center;gap:14px;font-size:28px"><span class="avatar" style="width:46px;height:46px;font-size:18px">${initial(name)}</span>${name}</h1>
+  <section class="hero" style="padding:14px 0 6px"><div class="hcopy"><h1 style="display:flex;align-items:center;gap:14px;font-size:28px">${avatarHtml(name,'width:46px;height:46px;font-size:18px')}${name}</h1>
   <p style="margin-top:8px">${name} 님이 트래킹한 뉴스 ${items.length}건</p></div></section>
   <div class="grid" style="margin-top:16px">${items.length?items.map((p,i)=>cardHtml(p,i)).join(""):'<p class="empty">아직 작성한 트래킹이 없습니다.</p>'}</div>`;
 }
@@ -314,7 +321,7 @@ function viewPost(id){
   return `<div class="back" onclick="history.length>1?history.back():location.hash='#/'">← 목록으로</div>
   <article class="article">${tagsHtml(p.tags)}
     <h1 style="margin-top:12px">${p.title}</h1>
-    <div class="abyline"><span class="avatar">${initial(p.author)}</span><span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span></div>
+    <div class="abyline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span></div>
     <h4>요약</h4><p>${p.summary}</p>
     <h4>인사이트</h4><div class="insight"><p>${p.insight}</p></div>
     ${src}</article>`;
