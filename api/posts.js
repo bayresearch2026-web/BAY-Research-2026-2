@@ -43,6 +43,22 @@ function readStatus(prop) {
   if (prop.rich_text || prop.title) return readText(prop);
   return "";
 }
+// Source 열을 타입에 상관없이 읽기: URL 속성 / 텍스트에 붙여넣은 링크 / 링크가 걸린 텍스트 / 파일 모두 지원
+function readUrl(prop) {
+  if (!prop) return "";
+  if (prop.url) return prop.url;                                  // URL 속성 타입
+  const rt = prop.rich_text || prop.title;                       // 텍스트/제목 타입
+  if (rt) {
+    for (const t of rt) if (t.href) return t.href;               // 글자에 링크가 걸린 경우
+    const txt = rt.map((t) => t.plain_text).join("").trim();     // 링크를 글자로 붙여넣은 경우
+    if (txt) return /^https?:\/\//i.test(txt) ? txt : "https://" + txt.replace(/^\/+/, "");
+  }
+  if (prop.files && prop.files[0]) {                             // 파일&미디어 타입
+    const f = prop.files[0];
+    return (f.external && f.external.url) || (f.file && f.file.url) || "";
+  }
+  return "";
+}
 function meaningfulInsight(s) {
   const t = (s || "").trim().toLowerCase();
   return t.length > 0 && t !== "insight" && t !== "insights";
@@ -173,7 +189,7 @@ export default async function handler(req, res) {
           author: readAuthor(getProp(p, "Author")),
           summary: readText(getProp(p, "Content Summary")),
           insight,
-          source: (sourceProp && sourceProp.url) || "",
+          source: readUrl(sourceProp),
           date: (dateProp && dateProp.date && dateProp.date.start) || "",
           tags: tagProp && tagProp.multi_select ? tagProp.multi_select.map((t) => t.name) : [],
         };

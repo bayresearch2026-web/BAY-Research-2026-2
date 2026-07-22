@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="description" content="BAY 리서치팀 뉴스트래킹 아카이브" />
 <title>BAY 리서치팀 · 뉴스트래킹</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="assets/favicon-180.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
@@ -246,9 +249,7 @@ function viewHome(){
       <div class="crystals" id="cssCrystals" style="display:none"><span class="cube c1"></span><span class="cube c2"></span><span class="cube c3"></span></div>
     </div>
     <div class="hcopy">
-      <span class="eyebrow"><span class="dot"></span>매주 업데이트되는 크립토 리서치</span>
-      <h1>이번 주 크립토,<br><span class="hl">핵심만 짚어드립니다.</span></h1>
-      <p>BAY 리서치팀이 한 주간의 블록체인·크립토 흐름을 추적하고, 그 안에서 읽어낸 인사이트까지 아카이브합니다.</p>
+      <h1><span class="hl">Blockchain</span> Weekly Brief</h1>
       <div class="meta">
         <span class="chip"><b>${POSTS.length}</b> 트래킹</span>
         <span class="chip"><b>${new Set(POSTS.map(p=>p.author).filter(Boolean)).size}</b> 작성자</span>
