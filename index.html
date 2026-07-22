@@ -46,7 +46,7 @@
   .nav .links a.active{color:var(--accent);background:var(--accent-soft)}
 
   /* ---------- hero ---------- */
-  .hero{position:relative;padding:56px 0 26px;overflow:hidden}
+  .hero{position:relative;padding:56px 0 26px}
   .hero .hcopy{position:relative;z-index:2;max-width:600px}
   .hero .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;letter-spacing:.02em;
     color:var(--accent);background:var(--accent-soft);padding:6px 12px;border-radius:999px;margin-bottom:16px}
@@ -61,8 +61,8 @@
   .hero .meta .chip b{font-size:18px;font-weight:900;color:var(--text);letter-spacing:-.02em;font-family:"Inter"}
 
   /* ---------- hero crystal animation ---------- */
-  .hero-art{position:absolute;top:0;right:-10px;width:340px;height:100%;z-index:1;pointer-events:none;display:grid;place-items:center}
-  .hero-art .glow{position:absolute;width:280px;height:280px;border-radius:50%;
+  .hero-art{position:absolute;top:0;right:8px;width:340px;height:100%;z-index:1;pointer-events:none;display:grid;place-items:center}
+  .hero-art .glow{position:absolute;width:240px;height:240px;border-radius:50%;
     background:radial-gradient(circle,rgba(46,166,255,.28) 0%,rgba(11,92,255,.10) 45%,rgba(11,92,255,0) 70%);
     filter:blur(6px);animation:breathe 5s ease-in-out infinite}
   @keyframes breathe{0%,100%{transform:scale(.92);opacity:.75}50%{transform:scale(1.08);opacity:1}}
@@ -80,7 +80,7 @@
   @keyframes float2{0%,100%{transform:translateY(-6px) rotate(3deg)}50%{transform:translateY(10px) rotate(-2deg)}}
   @keyframes float3{0%,100%{transform:translateY(4px) rotate(-2deg)}50%{transform:translateY(-12px) rotate(3deg)}}
   /* 실제 크리스탈 이미지를 넣으면 아래로 자동 대체됩니다 */
-  .hero-art img.crystal-img{position:relative;width:auto;max-width:320px;max-height:250px;filter:drop-shadow(0 22px 38px rgba(11,92,255,.34));animation:floatImg 6.5s ease-in-out infinite}
+  .hero-art img.crystal-img{position:relative;width:auto;max-width:300px;max-height:210px;filter:drop-shadow(0 22px 38px rgba(11,92,255,.34));animation:floatImg 6.5s ease-in-out infinite}
   @keyframes floatImg{0%,100%{transform:translateY(0) rotate(-1.5deg)}50%{transform:translateY(-16px) rotate(1.5deg)}}
   @media(max-width:760px){.hero-art{display:none}.hero .hcopy{max-width:none}}
   @media(prefers-reduced-motion:reduce){.cube,.crystals .cube,.glow,.crystal-img,.hero .eyebrow .dot{animation:none!important}}
