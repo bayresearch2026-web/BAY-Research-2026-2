@@ -100,7 +100,14 @@ function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
 function rtHtml(arr) {
-  return (arr || []).map((t) => esc(t.plain_text)).join("");
+  return (arr || [])
+    .map((t) => {
+      const s = esc(t.plain_text);
+      if (t.href) return `<a href="${esc(t.href)}" target="_blank" rel="noopener">${s}</a>`;
+      // 맨텍스트로 적힌 URL도 자동으로 링크 처리
+      return s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    })
+    .join("");
 }
 // 한 블록의 자식들을 모두(페이지네이션 포함) 가져오기
 async function fetchChildren(blockId, token) {
