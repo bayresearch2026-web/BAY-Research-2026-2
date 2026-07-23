@@ -157,6 +157,17 @@
   .article p{color:var(--text);font-size:15.5px;line-height:1.85;white-space:pre-wrap}
   .article .insight{background:linear-gradient(180deg,var(--accent-soft),rgba(11,92,255,.03));border-left:3px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 20px;margin-top:6px}
   .article .insight p{color:#0f2c66}
+  .article .insight h5.ih{font-size:15px;font-weight:800;color:#0f2c66;margin:16px 0 6px;letter-spacing:-.01em}
+  .article .insight ul,.article .insight ol{margin:8px 0 8px 22px;color:#0f2c66}
+  .article .insight li{margin:4px 0;line-height:1.7}
+  .article .insight blockquote{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:10px 0;color:#0f2c66}
+  .article .insight pre{background:#eaf0ff;padding:12px 14px;border-radius:10px;overflow-x:auto;font-size:13px;line-height:1.6;white-space:pre-wrap;margin:10px 0}
+  .article .insight hr{border:none;border-top:1px solid var(--border);margin:14px 0}
+  .article .insight .itbl-wrap{overflow-x:auto;margin:12px 0;-webkit-overflow-scrolling:touch}
+  .article .insight table.itbl{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
+  .article .insight table.itbl th,.article .insight table.itbl td{border:1px solid var(--border);padding:9px 12px;text-align:left;vertical-align:top;color:var(--text);white-space:normal}
+  .article .insight table.itbl th{background:var(--accent-soft2);font-weight:800;color:#0f2c66}
+  .article .insight table.itbl tr:nth-child(even) td{background:#f7f9ff}
   .src{display:inline-flex;align-items:center;gap:7px;margin-top:26px;padding:11px 17px;border:1px solid var(--border-strong);border-radius:11px;font-size:14px;font-weight:700;color:var(--muted);transition:.15s}
   .src:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
 
@@ -324,7 +335,7 @@ function viewPost(id){
     <h1 style="margin-top:12px">${p.title}</h1>
     <div class="abyline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span></div>
     <h4>요약</h4><p>${p.summary}</p>
-    <h4>인사이트</h4><div class="insight"><p>${p.insight}</p></div>
+    <h4>인사이트</h4><div class="insight">${/<[a-z]/i.test(p.insight||"")?p.insight:'<p>'+(p.insight||"")+'</p>'}</div>
     ${src}</article>`;
 }
 

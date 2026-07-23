@@ -95,23 +95,63 @@ async function queryAll(url, token, version) {
   return out;
 }
 
-// 뉴스 페이지 본문(블록)을 인사이트 텍스트로 조립
+// HTML 이스케이프 + 리치텍스트 -> 안전한 HTML
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+function rtHtml(arr) {
+  return (arr || []).map((t) => esc(t.plain_text)).join("");
+}
+// 한 블록의 자식들을 모두(페이지네이션 포함) 가져오기
+async function fetchChildren(blockId, token) {
+  let out = [], cursor;
+  do {
+    const url = `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100` + (cursor ? `&start_cursor=${cursor}` : "");
+    const r = await fetch(url, { headers: headers(token, "2022-06-28") });
+    if (!r.ok) break;
+    const d = await r.json();
+    out = out.concat(d.results || []);
+    cursor = d.has_more ? d.next_cursor : undefined;
+  } while (cursor);
+  return out;
+}
+// 뉴스 페이지 본문(블록)을 인사이트 HTML로 조립 — 문단·소제목·목록·인용·표(table)까지 지원
 async function readInsightBody(pageId, token) {
   try {
-    const r = await fetch(`https://api.notion.com/v1/blocks/${pageId}/children?page_size=100`, {
-      headers: headers(token, "2022-06-28"),
-    });
-    if (!r.ok) return "";
-    const d = await r.json();
-    const parts = [];
-    for (const b of d.results || []) {
-      const node = b[b.type];
-      const txt = node && node.rich_text ? node.rich_text.map((t) => t.plain_text).join("") : "";
-      if (!txt.trim()) continue;
-      if (b.type.startsWith("heading")) parts.push((parts.length ? "\n" : "") + txt);
-      else parts.push(txt);
+    const blocks = await fetchChildren(pageId, token);
+    let html = "", listBuf = "", listTag = "";
+    const flush = () => { if (listBuf) { html += `<${listTag}>${listBuf}</${listTag}>`; listBuf = ""; listTag = ""; } };
+    for (const b of blocks) {
+      const t = b.type, node = b[t] || {};
+      if (t === "bulleted_list_item" || t === "numbered_list_item") {
+        const tag = t === "bulleted_list_item" ? "ul" : "ol";
+        if (listTag && listTag !== tag) flush();
+        listTag = tag; listBuf += `<li>${rtHtml(node.rich_text)}</li>`;
+        continue;
+      }
+      flush();
+      if (t === "paragraph") { const x = rtHtml(node.rich_text); if (x.trim()) html += `<p>${x}</p>`; }
+      else if (t.indexOf("heading") === 0) { const x = rtHtml(node.rich_text); if (x.trim()) html += `<h5 class="ih">${x}</h5>`; }
+      else if (t === "quote") { const x = rtHtml(node.rich_text); if (x.trim()) html += `<blockquote>${x}</blockquote>`; }
+      else if (t === "callout") { const x = rtHtml(node.rich_text); if (x.trim()) html += `<p>${x}</p>`; }
+      else if (t === "to_do") { const x = rtHtml(node.rich_text); html += `<p>${node.checked ? "☑" : "☐"} ${x}</p>`; }
+      else if (t === "code") { const x = rtHtml(node.rich_text); html += `<pre>${x}</pre>`; }
+      else if (t === "divider") { html += "<hr>"; }
+      else if (t === "table") {
+        const rows = await fetchChildren(b.id, token);
+        const hasHeader = node.has_column_header;
+        let tb = "";
+        rows.forEach((rw, ri) => {
+          const cells = (rw.table_row && rw.table_row.cells) || [];
+          const cellTag = hasHeader && ri === 0 ? "th" : "td";
+          tb += "<tr>" + cells.map((c) => `<${cellTag}>${rtHtml(c)}</${cellTag}>`).join("") + "</tr>";
+        });
+        if (tb) html += `<div class="itbl-wrap"><table class="itbl">${tb}</table></div>`;
+      }
+      else { const x = rtHtml(node.rich_text); if (x.trim()) html += `<p>${x}</p>`; }
     }
-    return parts.join("\n");
+    flush();
+    return html;
   } catch (e) {
     return "";
   }
@@ -177,8 +217,14 @@ export default async function handler(req, res) {
       results.map(async (page, i) => {
         const p = page.properties || {};
         const status = readStatus(getProp(p, "Status"));
-        let insight = readText(getProp(p, "Insight"));
-        if (!meaningfulInsight(insight)) insight = await readInsightBody(page.id, token);
+        // 인사이트: Insight 속성에 글이 있으면 그 텍스트를 HTML 문단으로, 없으면 페이지 본문(표 포함)을 HTML로
+        const insightProp = readText(getProp(p, "Insight"));
+        let insight;
+        if (meaningfulInsight(insightProp)) {
+          insight = "<p>" + esc(insightProp).replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>") + "</p>";
+        } else {
+          insight = await readInsightBody(page.id, token);
+        }
         const dateProp = getProp(p, "Date of Issue");
         const sourceProp = getProp(p, "Source");
         const tagProp = getProp(p, "Tag");
