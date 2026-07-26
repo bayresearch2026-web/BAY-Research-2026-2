@@ -146,6 +146,8 @@
   .author-card .avatar{width:48px;height:48px;font-size:18px;margin:0 auto 11px}
   .author-card .nm{font-weight:800;font-size:15px}
   .author-card .ct{color:var(--faint);font-size:12.5px;margin-top:3px;font-weight:600}
+  .author-card .abio{color:var(--muted);font-size:12.5px;margin-top:9px;padding-top:9px;border-top:1px solid var(--border);line-height:1.55}
+  .hero .abio-lg{margin-top:8px;color:var(--accent);font-size:14.5px;font-weight:700}
 
   .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;font-weight:700;margin:28px 0 8px;cursor:pointer;transition:.15s}
   .back:hover{color:var(--accent);gap:9px}
@@ -247,6 +249,13 @@ const SAMPLE = [
 /* ---- 상태 ---- */
 let POSTS = [];
 let USING_SAMPLE = false;
+let AUTHORS_META = {}; // 이름 -> {bio} (노션 작성자 소개 DB에서 로드)
+// 로컬 미리보기(샘플)에서만 쓰는 예시 한줄소개
+const SAMPLE_AUTHORS = {
+  "배예림":"규제·스테이블코인 담당","노제희":"RWA·제도권 동향 트래킹","이재환":"DeFi·리스테이킹 리서치",
+  "장동현":"L2·인프라 관심","이성재":"RWA 프로젝트 분석","김재성":"ETF·기관 자금 흐름",
+  "박의혁":"국내 규제·정책","장윤선":"DePIN·솔라나 생태계"
+};
 
 /* ---- 유틸 ---- */
 const $app = document.getElementById("app");
@@ -320,14 +329,16 @@ function viewAuthors(){
   const map={};POSTS.forEach(p=>{(map[p.author]=map[p.author]||[]).push(p);});
   const names=Object.keys(map).sort((a,b)=>map[b].length-map[a].length);
   return `<div class="sec-head" style="margin-top:34px"><h2>작성자</h2><span>팀원별 아카이빙</span></div>
-  <div class="authors">${names.map(n=>`<div class="author-card" onclick="location.hash='#/author/${encodeURIComponent(n)}'">
-    ${avatarHtml(n)}<div class="nm">${n}</div><div class="ct">트래킹 ${map[n].length}건</div></div>`).join("")}</div>`;
+  <div class="authors">${names.map(n=>{const bio=(AUTHORS_META[n]&&AUTHORS_META[n].bio)||"";
+    return `<div class="author-card" onclick="location.hash='#/author/${encodeURIComponent(n)}'">
+    ${avatarHtml(n)}<div class="nm">${n}</div><div class="ct">트래킹 ${map[n].length}건</div>${bio?`<div class="abio">${bio}</div>`:""}</div>`;}).join("")}</div>`;
 }
 function viewAuthor(name){
   const items=POSTS.filter(p=>p.author===name).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   return `<div class="back" onclick="location.hash='#/authors'">← 작성자 목록</div>
   <section class="hero" style="padding:14px 0 6px"><div class="hcopy"><h1 style="display:flex;align-items:center;gap:14px;font-size:28px">${avatarHtml(name,'width:46px;height:46px;font-size:18px')}${name}</h1>
-  <p style="margin-top:8px">${name} 님이 트래킹한 뉴스 ${items.length}건</p></div></section>
+  ${(AUTHORS_META[name]&&AUTHORS_META[name].bio)?`<p class="abio-lg">${AUTHORS_META[name].bio}</p>`:""}
+  <p style="margin-top:6px">${name} 님이 트래킹한 뉴스 ${items.length}건</p></div></section>
   <div class="grid" style="margin-top:16px">${items.length?items.map((p,i)=>cardHtml(p,i)).join(""):'<p class="empty">아직 작성한 트래킹이 없습니다.</p>'}</div>`;
 }
 function viewPost(id){
@@ -363,16 +374,25 @@ window.addEventListener("hashchange", router);
 /* ---- 데이터 로드 (노션 or 샘플) ----
    /api/posts = 노션에서 데이터를 가져오는 중계 함수 (배포 후 작동).
    로컬에서 파일만 열면 함수가 없어 위 SAMPLE 로 보입니다. */
+function applyAuthorMeta(authorsData){
+  AUTHORS_META = {};
+  (authorsData||[]).forEach(a=>{ if(a && a.name) AUTHORS_META[a.name] = { bio: a.bio || "" }; });
+  // 노션 작성자 소개 DB가 없거나 비어있고 샘플 모드면 예시 소개 사용
+  if(USING_SAMPLE && Object.keys(AUTHORS_META).length===0){
+    for(const k in SAMPLE_AUTHORS) AUTHORS_META[k] = { bio: SAMPLE_AUTHORS[k] };
+  }
+}
 function loadData(){
   $app.innerHTML=`<div class="loading"><div class="spinner"></div>데이터를 불러오는 중…</div>`;
-  fetch("/api/posts")
-    .then(r=>{ if(!r.ok) throw new Error("no api"); return r.json(); })
-    .then(data=>{
-      if(Array.isArray(data) && data.length){ POSTS=data; USING_SAMPLE=false; }
-      else { POSTS=SAMPLE; USING_SAMPLE=true; }
-      router();
-    })
-    .catch(()=>{ POSTS=SAMPLE; USING_SAMPLE=true; router(); });
+  Promise.all([
+    fetch("/api/posts").then(r=>{ if(!r.ok) throw new Error("no api"); return r.json(); }).catch(()=>null),
+    fetch("/api/authors").then(r=> r.ok ? r.json() : []).catch(()=>[])
+  ]).then(([data, authorsData])=>{
+    if(Array.isArray(data) && data.length){ POSTS=data; USING_SAMPLE=false; }
+    else { POSTS=SAMPLE; USING_SAMPLE=true; }
+    applyAuthorMeta(authorsData);
+    router();
+  });
 }
 loadData();
 </script>
