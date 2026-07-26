@@ -150,7 +150,7 @@
   .hero .abio-lg{margin-top:8px;color:var(--accent);font-size:14.5px;font-weight:700}
   .hero .about-lg{margin-top:10px;color:var(--muted);font-size:15px;line-height:1.75;max-width:640px;white-space:pre-wrap}
   .count-pill{font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:5px 12px;border-radius:999px;letter-spacing:-.01em;line-height:1;white-space:nowrap}
-  .hero h1 .a-count{font-size:12px;font-weight:600;color:var(--faint);letter-spacing:0;line-height:1.2}
+  .hero h1 .a-count{font-size:12px;font-weight:600;color:var(--faint);letter-spacing:0;line-height:1;white-space:nowrap}
 
   .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;font-weight:700;margin:28px 0 8px;cursor:pointer;transition:.15s}
   .back:hover{color:var(--accent);gap:9px}
@@ -339,7 +339,7 @@ function viewAuthors(){
 function viewAuthor(name){
   const items=POSTS.filter(p=>p.author===name).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   return `<div class="back" onclick="location.hash='#/authors'">← 작성자 목록</div>
-  <section class="hero" style="padding:14px 0 6px"><div class="hcopy"><h1 style="display:flex;align-items:center;gap:14px;font-size:28px">${avatarHtml(name,'width:46px;height:46px;font-size:18px')}<span style="display:inline-flex;flex-direction:column;gap:3px"><span>${name}</span><span class="a-count">트래킹 ${items.length}건</span></span></h1>
+  <section class="hero" style="padding:14px 0 6px"><div class="hcopy"><h1 style="display:flex;align-items:center;gap:14px;font-size:28px">${avatarHtml(name,'width:46px;height:46px;font-size:18px')}<span style="display:inline-flex;align-items:center;gap:8px">${name}<span class="a-count">· ${items.length}건</span></span></h1>
   ${(AUTHORS_META[name]&&AUTHORS_META[name].bio)?`<p class="abio-lg">${AUTHORS_META[name].bio}</p>`:""}
   ${(AUTHORS_META[name]&&AUTHORS_META[name].about)?`<p class="about-lg">${AUTHORS_META[name].about}</p>`:""}</div></section>
   <div class="grid" style="margin-top:16px">${items.length?items.map((p,i)=>cardHtml(p,i)).join(""):'<p class="empty">아직 작성한 트래킹이 없습니다.</p>'}</div>`;
