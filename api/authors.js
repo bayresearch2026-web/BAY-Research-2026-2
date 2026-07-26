@@ -41,15 +41,26 @@ function pickName(props) {
   }
   return "";
 }
-// 한줄소개: 지정 이름을 못 찾으면 제목이 아닌 첫 텍스트(rich_text) 열을 자동으로 사용
-function pickBio(props) {
-  const byName = firstText(props, ["한줄소개", "한 줄 소개", "소개", "Bio", "자기소개", "introduction", "한마디"]);
+// 열 이름 후보 — 필요하면 노션 열 이름을 여기에 맞춰 쓰시거나, 아래 목록에 추가하면 됩니다.
+const SHORT_NAMES = ["한줄소개", "한 줄 소개", "소개", "Bio", "한마디", "짧은소개", "간단소개"];
+const LONG_NAMES = ["자기소개", "자기 소개", "긴소개", "긴 소개", "상세소개", "소개글", "About", "자세한소개"];
+// 짧은 소개(목록 카드용): 지정 이름 우선, 없으면 '긴 소개'가 아닌 첫 텍스트 열 사용
+function pickShort(props) {
+  const byName = firstText(props, SHORT_NAMES);
   if (byName) return byName;
   for (const k of Object.keys(props || {})) {
     const p = props[k];
-    if (p && p.rich_text && p.rich_text.length) { const t = readText(p); if (t) return t; }
+    if (p && p.rich_text && p.rich_text.length) {
+      if (LONG_NAMES.some((n) => n.toLowerCase() === k.toLowerCase())) continue; // 긴 소개 열은 건너뜀
+      const t = readText(p);
+      if (t) return t;
+    }
   }
   return "";
+}
+// 긴 소개(상세 페이지용): 지정 이름으로만 찾기
+function pickLong(props) {
+  return firstText(props, LONG_NAMES);
 }
 function headers(token, version) {
   return { Authorization: `Bearer ${token}`, "Notion-Version": version, "Content-Type": "application/json" };
@@ -110,7 +121,12 @@ export default async function handler(req, res) {
       }
     }
 
-    const authors = results.map((page) => ({ name: pickName(page.properties || {}), bio: pickBio(page.properties || {}) })).filter((a) => a.name);
+    const authors = results
+      .map((page) => {
+        const props = page.properties || {};
+        return { name: pickName(props), bio: pickShort(props), about: pickLong(props) };
+      })
+      .filter((a) => a.name);
 
     if (debug) {
       const first = results[0] && results[0].properties ? Object.keys(results[0].properties) : null;

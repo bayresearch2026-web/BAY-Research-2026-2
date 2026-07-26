@@ -148,6 +148,7 @@
   .author-card .ct{color:var(--faint);font-size:12.5px;margin-top:3px;font-weight:600}
   .author-card .abio{color:var(--muted);font-size:12.5px;margin-top:9px;padding-top:9px;border-top:1px solid var(--border);line-height:1.55}
   .hero .abio-lg{margin-top:8px;color:var(--accent);font-size:14.5px;font-weight:700}
+  .hero .about-lg{margin-top:10px;color:var(--muted);font-size:15px;line-height:1.75;max-width:640px;white-space:pre-wrap}
 
   .back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:14px;font-weight:700;margin:28px 0 8px;cursor:pointer;transition:.15s}
   .back:hover{color:var(--accent);gap:9px}
@@ -338,7 +339,8 @@ function viewAuthor(name){
   return `<div class="back" onclick="location.hash='#/authors'">← 작성자 목록</div>
   <section class="hero" style="padding:14px 0 6px"><div class="hcopy"><h1 style="display:flex;align-items:center;gap:14px;font-size:28px">${avatarHtml(name,'width:46px;height:46px;font-size:18px')}${name}</h1>
   ${(AUTHORS_META[name]&&AUTHORS_META[name].bio)?`<p class="abio-lg">${AUTHORS_META[name].bio}</p>`:""}
-  <p style="margin-top:6px">${name} 님이 트래킹한 뉴스 ${items.length}건</p></div></section>
+  ${(AUTHORS_META[name]&&AUTHORS_META[name].about)?`<p class="about-lg">${AUTHORS_META[name].about}</p>`:""}
+  <p style="margin-top:8px">${name} 님이 트래킹한 뉴스 ${items.length}건</p></div></section>
   <div class="grid" style="margin-top:16px">${items.length?items.map((p,i)=>cardHtml(p,i)).join(""):'<p class="empty">아직 작성한 트래킹이 없습니다.</p>'}</div>`;
 }
 function viewPost(id){
@@ -376,7 +378,7 @@ window.addEventListener("hashchange", router);
    로컬에서 파일만 열면 함수가 없어 위 SAMPLE 로 보입니다. */
 function applyAuthorMeta(authorsData){
   AUTHORS_META = {};
-  (authorsData||[]).forEach(a=>{ if(a && a.name) AUTHORS_META[a.name] = { bio: a.bio || "" }; });
+  (authorsData||[]).forEach(a=>{ if(a && a.name) AUTHORS_META[a.name] = { bio: a.bio || "", about: a.about || "" }; });
   // 노션 작성자 소개 DB가 없거나 비어있고 샘플 모드면 예시 소개 사용
   if(USING_SAMPLE && Object.keys(AUTHORS_META).length===0){
     for(const k in SAMPLE_AUTHORS) AUTHORS_META[k] = { bio: SAMPLE_AUTHORS[k] };
