@@ -141,6 +141,18 @@
 
   .week-block{margin-bottom:34px}
   .week-tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:6px 13px;border-radius:9px;margin-bottom:14px}
+  .topics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:640px){.topics{grid-template-columns:1fr}}
+  .topic-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;
+    display:flex;flex-direction:column;gap:9px;transition:transform .15s,border-color .15s,box-shadow .15s}
+  .topic-card:hover{transform:translateY(-4px);border-color:var(--border-strong);box-shadow:var(--shadow-hover)}
+  .topic-card .tag{align-self:flex-start;font-size:12px;padding:4px 11px}
+  .topic-card .ct{color:var(--faint);font-size:12.5px;font-weight:700}
+  .topic-card .peek{display:flex;flex-direction:column;gap:4px;margin-top:2px;padding-top:9px;border-top:1px solid var(--border)}
+  .topic-card .peek span{color:var(--muted);font-size:12.5px;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topic-card.muted .tag{background:var(--bg-soft);color:var(--faint)}
+  .tag.tlink{cursor:pointer;transition:.15s}
+  .tag.tlink:hover{filter:brightness(.92)}
   .authors{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
   @media(max-width:640px){.authors{grid-template-columns:repeat(2,1fr)}}
   .author-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;cursor:pointer;
@@ -233,6 +245,7 @@
     <nav class="links">
       <a href="#/" data-route="home">최신</a>
       <a href="#/weeks" data-route="weeks">주차별</a>
+      <a href="#/topics" data-route="topics">주제별</a>
       <a href="#/authors" data-route="authors">작성자</a>
     </nav>
   </div>
@@ -430,6 +443,42 @@ function viewWeeks(){
     const label=items.length?deriveWeek(items[0].date).label:st;
     return `<div class="week-block"><span class="week-tag">${label} · ${items.length}건</span><div class="grid">${items.map((p,i)=>cardHtml(p,i)).join("")}</div></div>`;}).join("")}`;
 }
+/* ---- 주제별 ----
+   노션 Topic 열을 읽습니다. 선택/다중선택/텍스트 어느 타입이든 동작하고,
+   아직 분류 안 한 글은 "미분류"로 모아 맨 뒤에 둡니다. */
+const NO_TOPIC="미분류";
+function topicsOf(p){
+  const t=(p.topics||[]).filter(Boolean);
+  return t.length?t:[NO_TOPIC];
+}
+function topicMap(){
+  const map={};
+  POSTS.forEach(p=>topicsOf(p).forEach(t=>{(map[t]=map[t]||[]).push(p);}));
+  return map;
+}
+function viewTopics(){
+  const map=topicMap();
+  const names=Object.keys(map).sort((a,b)=>{
+    if(a===NO_TOPIC) return 1; if(b===NO_TOPIC) return -1;      // 미분류는 항상 맨 뒤
+    return map[b].length-map[a].length || a.localeCompare(b);
+  });
+  if(!names.length) return `<div class="sec-head" style="margin-top:34px"><h2>주제별</h2></div><p class="empty">아직 글이 없습니다.</p>`;
+  const only=names.length===1&&names[0]===NO_TOPIC;
+  return `<div class="sec-head" style="margin-top:34px"><h2>주제별</h2><span>관심 주제로 모아보기</span></div>
+  ${only?`<div class="banner">노션 DB에 <b>Topic</b> 열을 만들고 글마다 주제를 골라주시면 여기에 나뉘어 표시됩니다.</div>`:""}
+  <div class="topics">${names.map((n,i)=>`
+    <div class="topic-card${n===NO_TOPIC?" muted":""}" onclick="location.hash='#/topic/${encodeURIComponent(n)}'">
+      <span class="tag ${tagClass(n)}">${n}</span>
+      <div class="ct">${map[n].length}건</div>
+      <div class="peek">${map[n].slice(0,3).map(p=>`<span>${p.title}</span>`).join("")}</div>
+    </div>`).join("")}</div>`;
+}
+function viewTopic(name){
+  const items=POSTS.filter(p=>topicsOf(p).includes(name)).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  return `<div class="back" onclick="location.hash='#/topics'">← 주제 목록</div>
+  <div class="sec-head" style="margin-top:10px"><h2>${name}</h2><span>${items.length}건</span></div>
+  <div class="grid">${items.length?items.map((p,i)=>cardHtml(p,i)).join(""):'<p class="empty">이 주제의 글이 아직 없습니다.</p>'}</div>`;
+}
 function viewAuthors(){
   const map={};POSTS.forEach(p=>{(map[p.author]=map[p.author]||[]).push(p);});
   const names=Object.keys(map).sort((a,b)=>map[b].length-map[a].length);
@@ -485,7 +534,8 @@ function viewPost(id){
   return `<div class="back" onclick="history.length>1?history.back():location.hash='#/'">← 목록으로</div>
   <article class="article">${tagsHtml(p.tags)}
     <h1 style="margin-top:12px">${p.title}</h1>
-    <div class="abyline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span></div>
+    <div class="abyline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span>
+      ${(p.topics||[]).filter(Boolean).map(t=>`<a class="tag ${tagClass(t)} tlink" href="#/topic/${encodeURIComponent(t)}">${t}</a>`).join("")}</div>
     <h4>요약</h4><p class="psum">${fmtSummary(p.summary)}</p>
     <h4>인사이트</h4><div class="insight">${insightHtml(p)}</div>
     ${src}
@@ -499,6 +549,8 @@ function router(){
   let html,active="home";
   if(!route){html=viewHome();active="home";}
   else if(route==="weeks"){html=viewWeeks();active="weeks";}
+  else if(route==="topics"){html=viewTopics();active="topics";}
+  else if(route==="topic"){html=viewTopic(decodeURIComponent(arg||""));active="topics";}
   else if(route==="authors"){html=viewAuthors();active="authors";}
   else if(route==="author"){html=viewAuthor(decodeURIComponent(arg||""));active="authors";}
   else if(route==="post"){html=viewPost(arg);active="";}

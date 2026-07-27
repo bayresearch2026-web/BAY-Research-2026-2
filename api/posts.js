@@ -59,6 +59,19 @@ function readUrl(prop) {
   }
   return "";
 }
+// 주제(Topic) 열 읽기 — 선택/다중선택/텍스트 중 무엇으로 만들어도 동작합니다
+function readTopics(prop) {
+  if (!prop) return [];
+  if (prop.multi_select) return prop.multi_select.map((x) => x.name).filter(Boolean);
+  if (prop.select) return prop.select.name ? [prop.select.name] : [];
+  if (prop.status) return prop.status.name ? [prop.status.name] : [];
+  const arr = prop.rich_text || prop.title;
+  if (arr) {
+    const txt = arr.map((t) => t.plain_text).join("").trim();
+    return txt ? txt.split(/[,·/|]/).map((s) => s.trim()).filter(Boolean) : [];
+  }
+  return [];
+}
 function meaningfulInsight(s) {
   const t = (s || "").trim().toLowerCase();
   return t.length > 0 && t !== "insight" && t !== "insights";
@@ -270,6 +283,7 @@ export default async function handler(req, res) {
           source: readUrl(sourceProp),
           date: (dateProp && dateProp.date && dateProp.date.start) || "",
           tags: tagProp && tagProp.multi_select ? tagProp.multi_select.map((t) => t.name) : [],
+          topics: readTopics(getProp(p, "Topic")),
         };
       })
     );
