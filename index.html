@@ -130,6 +130,16 @@
   .tag{font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;background:var(--accent-soft2);color:var(--accent);letter-spacing:.01em}
   .tag.g{background:var(--green-soft);color:var(--green)}
   .tag.a{background:var(--amber-soft);color:var(--amber)}
+  /* 주제(Topic) 배지 색 — 노션 Topic 열의 색과 맞췄습니다 */
+  .tag.tp-blue{background:rgba(11,92,255,.12);color:#0b5cff}
+  .tag.tp-orange{background:rgba(214,116,16,.13);color:#b5620a}
+  .tag.tp-gray{background:rgba(90,100,120,.12);color:#5a6478}
+  .tag.tp-yellow{background:rgba(190,150,10,.16);color:#8a6a05}
+  .tag.tp-pink{background:rgba(214,51,132,.12);color:#c02a76}
+  .tag.tp-purple{background:rgba(124,58,237,.12);color:#6d28d9}
+  .tag.tp-red{background:rgba(229,72,77,.12);color:#d13438}
+  .tag.tp-green{background:rgba(15,157,99,.13);color:#0f9d63}
+  .tag.tp-brown{background:rgba(140,94,60,.14);color:#8b5e3c}
   .card h3{font-size:16.5px;font-weight:800;letter-spacing:-.015em;line-height:1.4;transition:color .15s}
   .card:hover h3{color:var(--accent)}
   .card .excerpt{color:var(--muted);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -221,10 +231,17 @@
   .likebtn.pop svg{transform:scale(1.35)}
   .likebar .lhint{font-size:13px;color:var(--faint)}
   .likebar .lhint.err{color:var(--like);font-weight:700;max-width:520px;line-height:1.5;word-break:break-word}
-  .card .foot .clike{display:inline-flex;align-items:center;gap:4px;margin-left:auto;color:var(--faint);font-weight:700;white-space:nowrap}
-  .card .foot .clike svg{width:13px;height:13px;flex:none}
-  .card .foot .clike.on{color:var(--like)}
-  .card .foot .clike.on svg{fill:var(--like);stroke:var(--like)}
+  /* 주제 배지는 카드 오른쪽 아래(작성자·날짜 줄 끝)에 붙습니다 */
+  .card .foot .ctopics{display:flex;align-items:center;gap:5px;min-width:0;margin-left:auto;padding-left:8px;overflow:hidden}
+  .card .foot .ctopics .tag{font-size:10.5px;padding:2px 8px;white-space:nowrap;max-width:112px;overflow:hidden;text-overflow:ellipsis}
+  /* 좋아요는 제목과 같은 줄 오른쪽에. 제목이 여러 줄이어도 첫 줄에 붙어 있습니다 */
+  .card .thead-row{display:flex;align-items:flex-start;gap:10px}
+  .card .thead-row h3{flex:1;min-width:0}
+  .card .thead-row .clike{display:inline-flex;align-items:center;gap:4px;flex:none;padding-top:3px;
+    font-size:12.5px;color:var(--faint);font-weight:700;white-space:nowrap}
+  .card .thead-row .clike svg{width:13px;height:13px;flex:none}
+  .card .thead-row .clike.on{color:var(--like)}
+  .card .thead-row .clike.on svg{fill:var(--like);stroke:var(--like)}
   .src{display:inline-flex;align-items:center;gap:7px;margin-top:26px;padding:11px 17px;border:1px solid var(--border-strong);border-radius:11px;font-size:14px;font-weight:700;color:var(--muted);transition:.15s}
   .src:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
 
@@ -323,7 +340,12 @@ function avatarHtml(name, style){
   const st = style ? ` style="${style}"` : "";
   return `<span class="avatar"${st}><img src="${list[0]}" alt="" loading="lazy" data-i="0" data-list="${list.join("|")}" onerror="var l=this.dataset.list.split('|'),i=+this.dataset.i+1;if(i&lt;l.length){this.dataset.i=i;this.src=l[i];}else{this.style.display='none';}">${initial(name)}</span>`;
 }
-const tagClass = (t) => t.includes("규제") ? "g" : (["프로젝트","DeFi","L2","프로젝트분석"].includes(t) ? "a" : "");
+/* 주제(Topic) 이름 → 배지 색. 노션 Topic 열에 값을 추가하면 여기에도 한 줄 넣어주세요(없으면 기본 파랑) */
+const TOPIC_TONE = {
+  "DeFi":"tp-orange","시장":"tp-blue","투자":"tp-orange","규제/법안":"tp-gray","기술":"tp-yellow",
+  "예측시장":"tp-gray","기관":"tp-pink","기타":"tp-purple","스테이블코인":"tp-red","보안":"tp-green","RWA":"tp-brown"
+};
+const tagClass = (t) => TOPIC_TONE[t] || (t.includes("규제") ? "g" : (["프로젝트","DeFi","L2","프로젝트분석"].includes(t) ? "a" : ""));
 const fmtDate = (d) => { if(!d||d.indexOf("-")<0) return d||""; const [,m,day]=d.split("-"); return `${m}.${day}`; };
 // 발행일(YYYY-MM-DD)로 그 주(일~토) 범위를 계산 -> {label:"2026.04.05~04.11", start:"2026-04-05"}
 function deriveWeek(dateStr){
@@ -409,16 +431,25 @@ function toggleLike(btn){
     .finally(()=>{ btn.dataset.busy=""; });
 }
 
+/* 카드 하단에 붙는 주제 배지 — 최대 2개까지만 보여 카드가 밀리지 않게 합니다.
+   배지를 누르면 그 주제 목록으로 이동합니다(카드 클릭과 겹치지 않도록 전파를 막습니다) */
+function cardTopicsHtml(p){
+  const ts=(p.topics||[]).filter(Boolean).slice(0,2);
+  if(!ts.length) return "";
+  return `<span class="ctopics">${ts.map(t=>
+    `<a class="tag ${tagClass(t)} tlink" href="#/topic/${encodeURIComponent(t)}" onclick="event.stopPropagation()">${t}</a>`
+  ).join("")}</span>`;
+}
 function cardHtml(p, i){
   const delay = Math.min((i||0)*60, 480);
   const n=p.likes||0;
   const like=n>0?`<span class="clike${isLiked(p.pageId)?" on":""}">${HEART}${n}</span>`:"";
   return `<article class="card" style="animation-delay:${delay}ms" onclick="location.hash='#/post/${p.id}'">
     ${tagsHtml(p.tags)}
-    <h3>${p.title}</h3>
+    <div class="thead-row"><h3>${p.title}</h3>${like}</div>
     <p class="excerpt">${p.summary}</p>
     <div class="foot">${avatarHtml(p.author)}
-      <span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span>${like}</div>
+      <span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span>${cardTopicsHtml(p)}</div>
   </article>`;
 }
 
