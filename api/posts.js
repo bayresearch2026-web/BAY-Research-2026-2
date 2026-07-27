@@ -256,8 +256,11 @@ export default async function handler(req, res) {
         const dateProp = getProp(p, "Date of Issue");
         const sourceProp = getProp(p, "Source");
         const tagProp = getProp(p, "Tag");
+        const likeProp = getProp(p, "Likes");
         return {
           id: i + 1,
+          pageId: page.id,                                   // 좋아요 저장에 쓰는 고유 주소
+          likes: (likeProp && Number(likeProp.number)) || 0,
           status,
           title: readText(getProp(p, "Title")),
           author: readAuthor(getProp(p, "Author")),

@@ -32,6 +32,7 @@
     --text:#0d1220;--muted:#5a6478;--faint:#8a93a6;
     --accent:#0b5cff;--accent-2:#2ea6ff;--accent-deep:#0a3ecc;--accent-soft:rgba(11,92,255,.08);--accent-soft2:rgba(11,92,255,.14);
     --green:#0f9d63;--green-soft:rgba(15,157,99,.12);--amber:#d1810f;--amber-soft:rgba(209,129,15,.12);
+    --like:#e5484d;--like-soft:rgba(229,72,77,.09);
     --radius:16px;--maxw:960px;--shadow:0 1px 2px rgba(13,18,32,.04),0 8px 24px rgba(13,18,32,.05);--shadow-hover:0 4px 10px rgba(11,92,255,.08),0 18px 40px rgba(13,18,32,.10);
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -186,6 +187,22 @@
   .article .insight table th,.article .insight table td{border:1px solid var(--border);padding:9px 12px;text-align:left;vertical-align:top;color:var(--text);white-space:normal}
   .article .insight table th{background:var(--bg-soft);font-weight:800;color:var(--text)}
   .article .insight table tr:nth-child(even) td{background:#fafbfe}
+  /* ---- 좋아요 ---- */
+  .likebar{display:flex;align-items:center;gap:12px;margin-top:26px;padding-top:22px;border-top:1px solid var(--border);flex-wrap:wrap}
+  .likebtn{display:inline-flex;align-items:center;gap:9px;padding:10px 18px;border:1px solid var(--border-strong);border-radius:999px;
+    background:var(--card);font-family:inherit;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer;transition:.15s;line-height:1}
+  .likebtn:hover:not(:disabled){border-color:var(--like);color:var(--like);background:var(--like-soft);transform:translateY(-1px)}
+  .likebtn:active:not(:disabled){transform:scale(.96)}
+  .likebtn:disabled{opacity:.5;cursor:default}
+  .likebtn svg{width:18px;height:18px;flex:none;transition:transform .18s cubic-bezier(.3,1.5,.5,1)}
+  .likebtn.on{border-color:var(--like);color:var(--like);background:var(--like-soft)}
+  .likebtn.on svg{fill:var(--like);stroke:var(--like)}
+  .likebtn.pop svg{transform:scale(1.35)}
+  .likebar .lhint{font-size:13px;color:var(--faint)}
+  .card .foot .clike{display:inline-flex;align-items:center;gap:4px;margin-left:auto;color:var(--faint);font-weight:700;white-space:nowrap}
+  .card .foot .clike svg{width:13px;height:13px;flex:none}
+  .card .foot .clike.on{color:var(--like)}
+  .card .foot .clike.on svg{fill:var(--like);stroke:var(--like)}
   .src{display:inline-flex;align-items:center;gap:7px;margin-top:26px;padding:11px 17px;border:1px solid var(--border-strong);border-radius:11px;font-size:14px;font-weight:700;color:var(--muted);transition:.15s}
   .src:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
 
@@ -298,14 +315,78 @@ function deriveWeek(dateStr){
 }
 const tagsHtml = (tags)=>`<div class="tags">${tags.map(t=>`<span class="tag ${tagClass(t)}">${t}</span>`).join("")}</div>`;
 
+/* ---- 좋아요 ----
+   숫자는 노션 DB의 Likes 열에 저장되고, "내가 눌렀는지"는 이 브라우저에만 기록됩니다.
+   (로그인이 없어서 브라우저 저장소를 지우면 다시 누를 수 있습니다) */
+const LIKE_KEY = "bay_liked_v1";
+function likedSet(){
+  try{ return new Set(JSON.parse(localStorage.getItem(LIKE_KEY)||"[]")); }catch(e){ return new Set(); }
+}
+function setLiked(pageId, on){
+  try{
+    const s=likedSet(); on?s.add(pageId):s.delete(pageId);
+    localStorage.setItem(LIKE_KEY, JSON.stringify([...s]));
+  }catch(e){}
+}
+function isLiked(pageId){ return !!pageId && likedSet().has(pageId); }
+const HEART=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1.1 1L12 21l7.7-7.6 1.1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>`;
+
+function likeBarHtml(p){
+  if(USING_SAMPLE || !p.pageId){
+    return `<div class="likebar"><button class="likebtn" disabled>${HEART}<span>${p.likes||0}</span></button>
+      <span class="lhint">노션 연결·배포 후에 좋아요를 누를 수 있어요</span></div>`;
+  }
+  const on=isLiked(p.pageId);
+  return `<div class="likebar">
+    <button class="likebtn${on?" on":""}" id="likeBtn" data-page="${p.pageId}"
+      aria-pressed="${on}" aria-label="이 글 좋아요" onclick="toggleLike(this)">
+      ${HEART}<span id="likeCount">${p.likes||0}</span></button>
+    <span class="lhint" id="likeHint">${on?"이 글에 좋아요를 눌렀어요":"읽고 도움이 됐다면 눌러주세요"}</span>
+  </div>`;
+}
+function toggleLike(btn){
+  if(btn.dataset.busy==="1") return;
+  const pageId=btn.dataset.page;
+  const turningOn=!btn.classList.contains("on");
+  const $c=btn.querySelector("#likeCount"), $h=document.getElementById("likeHint");
+  const before=Number($c.textContent)||0;
+
+  // 먼저 화면부터 바꿔서 즉각 반응하게 하고, 실패하면 되돌립니다
+  btn.dataset.busy="1";
+  btn.classList.toggle("on",turningOn);
+  btn.setAttribute("aria-pressed",String(turningOn));
+  $c.textContent=Math.max(0,before+(turningOn?1:-1));
+  if(turningOn){ btn.classList.add("pop"); setTimeout(()=>btn.classList.remove("pop"),200); }
+  if($h) $h.textContent=turningOn?"이 글에 좋아요를 눌렀어요":"읽고 도움이 됐다면 눌러주세요";
+
+  fetch("/api/like",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({pageId,delta:turningOn?1:-1})})
+    .then(r=>r.ok?r.json():r.json().then(d=>Promise.reject(d&&d.error||"실패")))
+    .then(d=>{
+      $c.textContent=d.likes;
+      setLiked(pageId,turningOn);
+      const post=POSTS.find(x=>x.pageId===pageId); if(post) post.likes=d.likes;
+    })
+    .catch(err=>{
+      btn.classList.toggle("on",!turningOn);
+      btn.setAttribute("aria-pressed",String(!turningOn));
+      $c.textContent=before;
+      if($h) $h.textContent="저장하지 못했어요 — 잠시 뒤 다시 눌러주세요";
+      console.warn("좋아요 저장 실패:",err);
+    })
+    .finally(()=>{ btn.dataset.busy=""; });
+}
+
 function cardHtml(p, i){
   const delay = Math.min((i||0)*60, 480);
+  const n=p.likes||0;
+  const like=n>0?`<span class="clike${isLiked(p.pageId)?" on":""}">${HEART}${n}</span>`:"";
   return `<article class="card" style="animation-delay:${delay}ms" onclick="location.hash='#/post/${p.id}'">
     ${tagsHtml(p.tags)}
     <h3>${p.title}</h3>
     <p class="excerpt">${p.summary}</p>
     <div class="foot">${avatarHtml(p.author)}
-      <span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span></div>
+      <span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span>${like}</div>
   </article>`;
 }
 
@@ -397,7 +478,8 @@ function viewPost(id){
     <div class="abyline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span></div>
     <h4>요약</h4><p class="psum">${fmtSummary(p.summary)}</p>
     <h4>인사이트</h4><div class="insight">${insightHtml(p)}</div>
-    ${src}</article>`;
+    ${src}
+    ${likeBarHtml(p)}</article>`;
 }
 
 /* ---- 라우터 ---- */
