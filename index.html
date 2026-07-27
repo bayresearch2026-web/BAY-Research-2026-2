@@ -24,6 +24,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+<!-- 마크다운(.md) 문법을 화면에서 해석해주는 도구 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 <style>
   :root{
     --bg:#ffffff;--bg-soft:#f4f6fb;--card:#ffffff;--card-hover:#fbfcff;--border:#e7eaf1;--border-strong:#d7dce8;
@@ -160,21 +162,30 @@
   .article .abyline .who{color:var(--text);font-weight:700}
   .article h4{font-size:12px;font-weight:900;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;margin:26px 0 8px}
   .article p{color:var(--text);font-size:15.5px;line-height:1.85;white-space:pre-wrap}
-  .article .insight{background:linear-gradient(180deg,var(--accent-soft),rgba(11,92,255,.03));border-left:3px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 20px;margin-top:6px}
-  .article .insight p{color:#0f2c66}
+  .article .insight{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px 26px;margin-top:6px}
+  .article .insight>*:first-child{margin-top:0}
+  .article .insight>*:last-child{margin-bottom:0}
+  .article .insight p{color:var(--text);font-size:15px;line-height:1.8;margin:10px 0;white-space:normal}
   .article p.psum{white-space:normal}
   .article .insight a,.article p.psum a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
-  .article .insight h5.ih{font-size:15px;font-weight:800;color:#0f2c66;margin:16px 0 6px;letter-spacing:-.01em}
-  .article .insight ul,.article .insight ol{margin:8px 0 8px 22px;color:#0f2c66}
-  .article .insight li{margin:4px 0;line-height:1.7}
-  .article .insight blockquote{border-left:3px solid var(--accent);padding:2px 0 2px 14px;margin:10px 0;color:#0f2c66}
-  .article .insight pre{background:#eaf0ff;padding:12px 14px;border-radius:10px;overflow-x:auto;font-size:13px;line-height:1.6;white-space:pre-wrap;margin:10px 0}
-  .article .insight hr{border:none;border-top:1px solid var(--border);margin:14px 0}
+  .article .insight code{background:var(--bg-soft);border:1px solid var(--border);border-radius:5px;padding:1px 5px;font-size:.92em;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  /* 소제목 3단계 — 크기·굵기·구분선으로 층위를 확실히 나눕니다
+     마크다운 #/##/### 과 노션 제목1/2/3 이 같은 층위로 보이게 맞춰둔 규칙입니다 */
+  .article .insight h1,.article .insight h2,.article .insight h3.ih1{font-size:19px;font-weight:900;color:var(--text);letter-spacing:-.02em;margin:28px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+  .article .insight h3,.article .insight h4.ih2{font-size:16.5px;font-weight:800;color:var(--text);letter-spacing:-.015em;margin:24px 0 8px}
+  .article .insight h4,.article .insight h5,.article .insight h6,.article .insight h5.ih3{font-size:14.5px;font-weight:800;color:var(--muted);letter-spacing:-.01em;margin:18px 0 6px}
+  .article .insight ul,.article .insight ol{margin:10px 0 10px 22px;color:var(--text)}
+  .article .insight li{margin:5px 0;line-height:1.8;font-size:15px}
+  .article .insight li::marker{color:var(--accent);font-weight:700}
+  .article .insight blockquote{border-left:3px solid var(--border-strong);padding:2px 0 2px 14px;margin:12px 0;color:var(--muted)}
+  .article .insight pre{background:var(--bg-soft);border:1px solid var(--border);padding:12px 14px;border-radius:10px;overflow-x:auto;font-size:13px;line-height:1.6;white-space:pre-wrap;margin:12px 0}
+  .article .insight pre code{background:none;border:none;padding:0}
+  .article .insight hr{border:none;border-top:1px solid var(--border);margin:18px 0}
   .article .insight .itbl-wrap{overflow-x:auto;margin:12px 0;-webkit-overflow-scrolling:touch}
-  .article .insight table.itbl{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
-  .article .insight table.itbl th,.article .insight table.itbl td{border:1px solid var(--border);padding:9px 12px;text-align:left;vertical-align:top;color:var(--text);white-space:normal}
-  .article .insight table.itbl th{background:var(--accent-soft2);font-weight:800;color:#0f2c66}
-  .article .insight table.itbl tr:nth-child(even) td{background:#f7f9ff}
+  .article .insight table{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff;border-radius:10px;overflow:hidden;margin:12px 0;display:block;overflow-x:auto}
+  .article .insight table th,.article .insight table td{border:1px solid var(--border);padding:9px 12px;text-align:left;vertical-align:top;color:var(--text);white-space:normal}
+  .article .insight table th{background:var(--bg-soft);font-weight:800;color:var(--text)}
+  .article .insight table tr:nth-child(even) td{background:#fafbfe}
   .src{display:inline-flex;align-items:center;gap:7px;margin-top:26px;padding:11px 17px;border:1px solid var(--border-strong);border-radius:11px;font-size:14px;font-weight:700;color:var(--muted);transition:.15s}
   .src:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
 
@@ -344,6 +355,38 @@ function viewAuthor(name){
   ${(AUTHORS_META[name]&&AUTHORS_META[name].about)?`<p class="about-lg">${AUTHORS_META[name].about}</p>`:""}</div></section>
   <div class="grid" style="margin-top:16px">${items.length?items.map((p,i)=>cardHtml(p,i)).join(""):'<p class="empty">아직 작성한 트래킹이 없습니다.</p>'}</div>`;
 }
+/* ---- 인사이트 렌더링 ----
+   1) insightMd(노션 Insight 속성에 쓴 마크다운 원문)이 있으면 마크다운으로 해석
+   2) 없으면 insight(노션 본문 블록을 서버에서 HTML로 만든 것)를 그대로 사용
+   3) 둘 다 아닌 옛 데이터/샘플은 마크다운 문법이 보이면 마크다운으로 해석 */
+function looksLikeMd(s){
+  return /^\s{0,3}#{1,6}\s|\n\s{0,3}#{1,6}\s|\*\*[^*\n]+\*\*|^\s*[-*+]\s+|\n\s*[-*+]\s+|^\s*\d+\.\s|\n\s*\d+\.\s|\[[^\]\n]+\]\([^)\s]+\)|^\s*>\s|\n\s*\|.*\|/.test(s);
+}
+function mdToHtml(src){
+  const s=String(src||"");
+  if(!s.trim()) return "";
+  if(window.marked&&marked.parse){
+    // 링크는 새 탭에서 열리도록
+    return marked.parse(s,{breaks:true,gfm:true})
+      .replace(/<a href="(https?:[^"]+)"/g,'<a href="$1" target="_blank" rel="noopener"');
+  }
+  // marked를 못 불러왔을 때를 대비한 최소 폴백 (제목·굵게·링크·문단만)
+  const esc=x=>x.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  return esc(s).split(/\n{2,}/).map(blk=>{
+    const h=blk.match(/^(#{1,6})\s+(.*)$/);
+    let t=blk.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+             .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+    if(h) return `<h${h[1].length}>${t.replace(/^#{1,6}\s+/,"")}</h${h[1].length}>`;
+    return `<p>${t.replace(/\n/g,"<br>")}</p>`;
+  }).join("");
+}
+function insightHtml(p){
+  if(p.insightMd&&String(p.insightMd).trim()) return mdToHtml(p.insightMd);
+  const s=String(p.insight||"");
+  if(!s.trim()) return "";
+  if(/<[a-z]/i.test(s)) return s;
+  return looksLikeMd(s)?mdToHtml(s):`<p>${s}</p>`;
+}
 function viewPost(id){
   const p=POSTS.find(x=>String(x.id)===String(id));
   if(!p) return `<p class="empty">글을 찾을 수 없습니다.</p>`;
@@ -353,7 +396,7 @@ function viewPost(id){
     <h1 style="margin-top:12px">${p.title}</h1>
     <div class="abyline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span></div>
     <h4>요약</h4><p class="psum">${fmtSummary(p.summary)}</p>
-    <h4>인사이트</h4><div class="insight">${/<[a-z]/i.test(p.insight||"")?p.insight:'<p>'+(p.insight||"")+'</p>'}</div>
+    <h4>인사이트</h4><div class="insight">${insightHtml(p)}</div>
     ${src}</article>`;
 }
 

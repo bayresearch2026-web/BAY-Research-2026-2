@@ -102,7 +102,14 @@ function esc(s) {
 function rtHtml(arr) {
   return (arr || [])
     .map((t) => {
-      const s = esc(t.plain_text);
+      let s = esc(t.plain_text);
+      // 노션에서 준 글자 서식(굵게·기울임·코드·취소선·밑줄)을 그대로 살립니다
+      const a = t.annotations || {};
+      if (a.code) s = `<code>${s}</code>`;
+      if (a.bold) s = `<strong>${s}</strong>`;
+      if (a.italic) s = `<em>${s}</em>`;
+      if (a.strikethrough) s = `<s>${s}</s>`;
+      if (a.underline) s = `<u>${s}</u>`;
       if (t.href) return `<a href="${esc(t.href)}" target="_blank" rel="noopener">${s}</a>`;
       // 맨텍스트로 적힌 URL도 자동으로 링크 처리
       return s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
@@ -127,23 +134,36 @@ async function readInsightBody(pageId, token) {
   try {
     const blocks = await fetchChildren(pageId, token);
     let html = "", listBuf = "", listTag = "";
-    const flush = () => { if (listBuf) { html += `<${listTag}>${listBuf}</${listTag}>`; listBuf = ""; listTag = ""; } };
+    // 번호 목록이 문단 때문에 끊겨도 1로 되돌아가지 않도록 번호를 이어서 셉니다
+    let olNext = 1, olStart = 1;
+    const flush = () => {
+      if (!listBuf) return;
+      html += listTag === "ol" ? `<ol start="${olStart}">${listBuf}</ol>` : `<ul>${listBuf}</ul>`;
+      listBuf = ""; listTag = "";
+    };
     for (const b of blocks) {
       const t = b.type, node = b[t] || {};
       if (t === "bulleted_list_item" || t === "numbered_list_item") {
         const tag = t === "bulleted_list_item" ? "ul" : "ol";
         if (listTag && listTag !== tag) flush();
+        if (tag === "ol") { if (!listTag) olStart = olNext; olNext++; }
         listTag = tag; listBuf += `<li>${rtHtml(node.rich_text)}</li>`;
         continue;
       }
       flush();
       if (t === "paragraph") { const x = rtHtml(node.rich_text); if (x.trim()) html += `<p>${x}</p>`; }
-      else if (t.indexOf("heading") === 0) { const x = rtHtml(node.rich_text); if (x.trim()) html += `<h5 class="ih">${x}</h5>`; }
+      else if (t.indexOf("heading") === 0) {
+        // 소제목이 나오면 번호 매기기를 새로 시작
+        olNext = 1;
+        const lv = t === "heading_1" ? 1 : t === "heading_2" ? 2 : 3;
+        const x = rtHtml(node.rich_text);
+        if (x.trim()) html += `<h${lv + 2} class="ih ih${lv}">${x}</h${lv + 2}>`;
+      }
       else if (t === "quote") { const x = rtHtml(node.rich_text); if (x.trim()) html += `<blockquote>${x}</blockquote>`; }
       else if (t === "callout") { const x = rtHtml(node.rich_text); if (x.trim()) html += `<p>${x}</p>`; }
       else if (t === "to_do") { const x = rtHtml(node.rich_text); html += `<p>${node.checked ? "☑" : "☐"} ${x}</p>`; }
       else if (t === "code") { const x = rtHtml(node.rich_text); html += `<pre>${x}</pre>`; }
-      else if (t === "divider") { html += "<hr>"; }
+      else if (t === "divider") { olNext = 1; html += "<hr>"; }
       else if (t === "table") {
         const rows = await fetchChildren(b.id, token);
         const hasHeader = node.has_column_header;
@@ -226,9 +246,10 @@ export default async function handler(req, res) {
         const status = readStatus(getProp(p, "Status"));
         // 인사이트: Insight 속성에 글이 있으면 그 텍스트를 HTML 문단으로, 없으면 페이지 본문(표 포함)을 HTML로
         const insightProp = readText(getProp(p, "Insight"));
-        let insight;
+        let insight = "", insightMd = "";
         if (meaningfulInsight(insightProp)) {
-          insight = "<p>" + esc(insightProp).replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>") + "</p>";
+          // 속성에 적힌 글은 마크다운 원문 그대로 넘기고, 화면에서 marked.js가 해석합니다
+          insightMd = insightProp;
         } else {
           insight = await readInsightBody(page.id, token);
         }
@@ -242,6 +263,7 @@ export default async function handler(req, res) {
           author: readAuthor(getProp(p, "Author")),
           summary: readText(getProp(p, "Content Summary")),
           insight,
+          insightMd,
           source: readUrl(sourceProp),
           date: (dateProp && dateProp.date && dateProp.date.start) || "",
           tags: tagProp && tagProp.multi_select ? tagProp.multi_select.map((t) => t.name) : [],
