@@ -39,8 +39,73 @@ function readStatus(prop) {
   return "";
 }
 
+// 진단용: /api/like?debug=1 을 주소창에 치면 무엇이 막혀 있는지 알려줍니다
+async function selfCheck(token, dbId) {
+  const out = { token: !!token, dbId: !!dbId, steps: [] };
+  if (!token || !dbId) { out.결론 = "환경변수(NOTION_TOKEN / NOTION_DB_ID)가 없습니다."; return out; }
+
+  // 게시된 글 한 건 찾기 (신 구조 → 구 구조 순서로 시도)
+  let page = null;
+  try {
+    const dbRes = await fetch(`https://api.notion.com/v1/databases/${dbId}`, {
+      headers: { Authorization: `Bearer ${token}`, "Notion-Version": "2025-09-03" },
+    });
+    if (dbRes.ok) {
+      const db = await dbRes.json();
+      for (const s of db.data_sources || []) {
+        const q = await fetch(`https://api.notion.com/v1/data_sources/${s.id}/query`, {
+          method: "POST",
+          headers: { ...headers(token), "Notion-Version": "2025-09-03" },
+          body: JSON.stringify({ page_size: 100 }),
+        });
+        if (q.ok) { const d = await q.json(); if ((d.results || []).length) { page = d.results[0]; break; } }
+      }
+    }
+  } catch (e) { out.steps.push("신 구조 조회 실패: " + String(e).slice(0, 120)); }
+  if (!page) {
+    const q = await fetch(`https://api.notion.com/v1/databases/${dbId}/query`, {
+      method: "POST", headers: headers(token), body: JSON.stringify({ page_size: 100 }),
+    });
+    if (q.ok) { const d = await q.json(); page = (d.results || [])[0] || null; }
+  }
+  if (!page) { out.결론 = "DB에서 글을 하나도 읽지 못했습니다. 통합이 이 DB에 연결돼 있는지 확인하세요."; return out; }
+
+  const props = page.properties || {};
+  out.속성이름들 = Object.keys(props);
+  const [likeKey, likeProp] = findProp(props, LIKE_PROP);
+  out.Likes열_찾음 = !!likeKey;
+  out.Likes열_실제이름 = likeKey;
+  out.Likes열_타입 = likeProp ? likeProp.type : null;
+
+  if (!likeKey) { out.결론 = `DB에 "${LIKE_PROP}" 열이 없습니다. 숫자(Number) 열로 추가하세요.`; return out; }
+  if (likeProp.type !== "number") { out.결론 = `"${likeKey}" 열이 숫자(Number) 타입이 아닙니다. 지금 타입: ${likeProp.type}`; return out; }
+
+  // 같은 값을 다시 써서 쓰기 권한만 시험합니다 (값은 바뀌지 않습니다)
+  const cur = Number(likeProp.number) || 0;
+  const w = await fetch(`https://api.notion.com/v1/pages/${page.id}`, {
+    method: "PATCH", headers: headers(token),
+    body: JSON.stringify({ properties: { [likeKey]: { number: cur } } }),
+  });
+  out.쓰기권한 = w.ok;
+  if (!w.ok) {
+    out.쓰기오류 = (await w.text()).slice(0, 300);
+    out.결론 = "읽기는 되는데 쓰기가 막혔습니다. 통합 설정에서 'Update content' 권한을 켜세요.";
+    return out;
+  }
+  out.결론 = "모두 정상입니다. 좋아요가 저장돼야 합니다.";
+  return out;
+}
+
 export default async function handler(req, res) {
   const token = process.env.NOTION_TOKEN;
+
+  if (req.method === "GET" && req.query && (req.query.debug || req.query.debug === "")) {
+    res.setHeader("Cache-Control", "no-store");
+    try { res.status(200).json(await selfCheck(token, process.env.NOTION_DB_ID)); }
+    catch (e) { res.status(500).json({ error: String(e).slice(0, 300) }); }
+    return;
+  }
+
   if (!token) {
     res.status(500).json({ error: "NOTION_TOKEN 환경변수가 설정되지 않았습니다." });
     return;

@@ -199,6 +199,7 @@
   .likebtn.on svg{fill:var(--like);stroke:var(--like)}
   .likebtn.pop svg{transform:scale(1.35)}
   .likebar .lhint{font-size:13px;color:var(--faint)}
+  .likebar .lhint.err{color:var(--like);font-weight:700;max-width:520px;line-height:1.5;word-break:break-word}
   .card .foot .clike{display:inline-flex;align-items:center;gap:4px;margin-left:auto;color:var(--faint);font-weight:700;white-space:nowrap}
   .card .foot .clike svg{width:13px;height:13px;flex:none}
   .card .foot .clike.on{color:var(--like)}
@@ -357,11 +358,20 @@ function toggleLike(btn){
   btn.setAttribute("aria-pressed",String(turningOn));
   $c.textContent=Math.max(0,before+(turningOn?1:-1));
   if(turningOn){ btn.classList.add("pop"); setTimeout(()=>btn.classList.remove("pop"),200); }
-  if($h) $h.textContent=turningOn?"이 글에 좋아요를 눌렀어요":"읽고 도움이 됐다면 눌러주세요";
+  if($h){ $h.className="lhint"; $h.textContent=turningOn?"이 글에 좋아요를 눌렀어요":"읽고 도움이 됐다면 눌러주세요"; }
 
   fetch("/api/like",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({pageId,delta:turningOn?1:-1})})
-    .then(r=>r.ok?r.json():r.json().then(d=>Promise.reject(d&&d.error||"실패")))
+    .then(async r=>{
+      const raw=await r.text();
+      let d=null; try{ d=JSON.parse(raw); }catch(e){}
+      if(!r.ok||!d){
+        // 서버가 준 진짜 이유를 그대로 보여줍니다
+        if(r.status===404 && !d) throw new Error("api/like.js 파일이 아직 배포되지 않았어요 (404)");
+        throw new Error((d&&(d.error+(d.detail?" / "+d.detail:"")))||`서버 응답 ${r.status}: ${raw.slice(0,150)}`);
+      }
+      return d;
+    })
     .then(d=>{
       $c.textContent=d.likes;
       setLiked(pageId,turningOn);
@@ -371,7 +381,7 @@ function toggleLike(btn){
       btn.classList.toggle("on",!turningOn);
       btn.setAttribute("aria-pressed",String(!turningOn));
       $c.textContent=before;
-      if($h) $h.textContent="저장하지 못했어요 — 잠시 뒤 다시 눌러주세요";
+      if($h){ $h.className="lhint err"; $h.textContent="저장 실패 — "+(err&&err.message||err); }
       console.warn("좋아요 저장 실패:",err);
     })
     .finally(()=>{ btn.dataset.busy=""; });
