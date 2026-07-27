@@ -152,8 +152,8 @@
   .week-block{margin-bottom:34px}
   .week-tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:6px 13px;border-radius:9px;margin-bottom:14px}
   /* minmax(0,1fr) 이 있어야 긴 제목이 칸을 밀어내지 않습니다 */
-  .topics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
-  @media(max-width:900px){.topics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  /* 최신·주차별과 같이 한 행에 두 개씩 */
+  .topics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
   @media(max-width:640px){.topics{grid-template-columns:minmax(0,1fr)}}
   .topic-card{min-width:0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;
     display:flex;flex-direction:column;gap:9px;transition:transform .15s,border-color .15s,box-shadow .15s}
@@ -162,7 +162,10 @@
   .topic-card .tag{font-size:12px;padding:4px 11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .topic-card .ct{color:var(--faint);font-size:12.5px;font-weight:700;white-space:nowrap}
   .topic-card .peek{display:flex;flex-direction:column;gap:4px;min-width:0;margin-top:2px;padding-top:9px;border-top:1px solid var(--border)}
-  .topic-card .peek span{display:block;min-width:0;color:var(--muted);font-size:12.5px;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* 기사 제목 앞 글머리 점. 점은 그대로 두고 제목만 말줄임 처리합니다 */
+  .topic-card .peek span{display:flex;gap:7px;min-width:0;color:var(--muted);font-size:12.5px;line-height:1.5}
+  .topic-card .peek span::before{content:"•";color:var(--border-strong);flex:none}
+  .topic-card .peek span i{font-style:normal;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   /* 미분류는 주제가 아니라 "할 일"에 가까우므로 한 줄 전체를 쓰고 점선으로 구분합니다 */
   .topic-card.muted{grid-column:1/-1;flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap;
     background:var(--bg-soft);border-style:dashed;border-color:var(--border-strong)}
@@ -510,7 +513,7 @@ function viewTopics(){
       <div class="thead"><span class="tag ${tagClass(n)}">${n}</span>${no?`<span class="ct">${c}건</span>`:""}</div>
       ${no?`<span class="mhint">아직 주제를 정하지 않은 글 — 노션에서 분류하면 위로 올라갑니다</span>`
           :`<div class="ct">${c}건</div>
-            <div class="peek">${map[n].slice(0,3).map(p=>`<span>${p.title}</span>`).join("")}</div>`}
+            <div class="peek">${map[n].slice(0,3).map(p=>`<span><i>${p.title}</i></span>`).join("")}</div>`}
     </div>`;}).join("")}</div>`;
 }
 function viewTopic(name){
