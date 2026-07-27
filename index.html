@@ -234,14 +234,12 @@
   /* 주제 배지는 카드 오른쪽 아래(작성자·날짜 줄 끝)에 붙습니다 */
   .card .foot .ctopics{display:flex;align-items:center;gap:5px;min-width:0;margin-left:auto;padding-left:8px;overflow:hidden}
   .card .foot .ctopics .tag{font-size:10.5px;padding:2px 8px;white-space:nowrap;max-width:112px;overflow:hidden;text-overflow:ellipsis}
-  /* 좋아요는 제목과 같은 줄 오른쪽에. 제목이 여러 줄이어도 첫 줄에 붙어 있습니다 */
-  .card .thead-row{display:flex;align-items:flex-start;gap:10px}
-  .card .thead-row h3{flex:1;min-width:0}
-  .card .thead-row .clike{display:inline-flex;align-items:center;gap:4px;flex:none;padding-top:3px;
-    font-size:12.5px;color:var(--faint);font-weight:700;white-space:nowrap}
-  .card .thead-row .clike svg{width:13px;height:13px;flex:none}
-  .card .thead-row .clike.on{color:var(--like)}
-  .card .thead-row .clike.on svg{fill:var(--like);stroke:var(--like)}
+  /* 좋아요는 같은 줄 맨 오른쪽(주제 배지 뒤) */
+  .card .foot .clike{display:inline-flex;align-items:center;gap:4px;margin-left:auto;padding-left:6px;color:var(--faint);font-weight:700;white-space:nowrap}
+  .card .foot .ctopics + .clike{margin-left:0;padding-left:8px}
+  .card .foot .clike svg{width:13px;height:13px;flex:none}
+  .card .foot .clike.on{color:var(--like)}
+  .card .foot .clike.on svg{fill:var(--like);stroke:var(--like)}
   .src{display:inline-flex;align-items:center;gap:7px;margin-top:26px;padding:11px 17px;border:1px solid var(--border-strong);border-radius:11px;font-size:14px;font-weight:700;color:var(--muted);transition:.15s}
   .src:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
 
@@ -446,10 +444,10 @@ function cardHtml(p, i){
   const like=n>0?`<span class="clike${isLiked(p.pageId)?" on":""}">${HEART}${n}</span>`:"";
   return `<article class="card" style="animation-delay:${delay}ms" onclick="location.hash='#/post/${p.id}'">
     ${tagsHtml(p.tags)}
-    <div class="thead-row"><h3>${p.title}</h3>${like}</div>
+    <h3>${p.title}</h3>
     <p class="excerpt">${p.summary}</p>
     <div class="foot">${avatarHtml(p.author)}
-      <span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span>${cardTopicsHtml(p)}</div>
+      <span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span>${cardTopicsHtml(p)}${like}</div>
   </article>`;
 }
 
