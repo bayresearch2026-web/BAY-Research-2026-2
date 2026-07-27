@@ -15,12 +15,20 @@ const PUBLISH_STATUS = ["홈페이지게시"];
 const normStatus = (s) => (s || "").replace(/\s/g, "").toLowerCase();
 const normId = (s) => String(s || "").replace(/-/g, "").toLowerCase();
 
-function headers(token) {
+function headers(token, version) {
   return {
     Authorization: `Bearer ${token}`,
-    "Notion-Version": "2022-06-28",
+    "Notion-Version": version || "2022-06-28",
     "Content-Type": "application/json",
   };
+}
+// 페이지 한 건 읽기 — 새 구조(데이터 소스)와 옛 구조를 모두 시도합니다
+async function getPage(pageId, token) {
+  for (const v of ["2025-09-03", "2022-06-28"]) {
+    const r = await fetch(`https://api.notion.com/v1/pages/${pageId}`, { headers: headers(token, v) });
+    if (r.ok) return await r.json();
+  }
+  return null;
 }
 // 속성 이름을 대소문자 무시하고 찾아 [실제이름, 값] 으로 돌려줍니다
 function findProp(props, name) {
@@ -30,13 +38,21 @@ function findProp(props, name) {
   for (const k of Object.keys(props)) if (k.toLowerCase() === lower) return [k, props[k]];
   return [null, null];
 }
+// posts.js 와 똑같이 읽어야 판정이 어긋나지 않습니다 (multi_select·formula 포함)
 function readStatus(prop) {
   if (!prop) return "";
   if (prop.status) return prop.status.name || "";
   if (prop.select) return prop.select.name || "";
+  if (prop.multi_select) return prop.multi_select.map((x) => x.name).join(", ");
+  if (prop.formula) return prop.formula.string || String(prop.formula.number ?? "");
   const arr = prop.rich_text || prop.title;
   if (arr) return arr.map((t) => t.plain_text).join("").trim();
   return "";
+}
+// 여러 값이 섞여 있어도(예: "홈페이지 게시, 작성완료") 게시 상태를 알아봅니다
+function isPublished(text) {
+  const n = normStatus(text);
+  return PUBLISH_STATUS.some((s) => n.includes(s));
 }
 
 // 진단용: /api/like?debug=1 을 주소창에 치면 무엇이 막혀 있는지 알려줍니다
@@ -72,6 +88,13 @@ async function selfCheck(token, dbId) {
 
   const props = page.properties || {};
   out.속성이름들 = Object.keys(props);
+  const [statusKey, statusProp] = findProp(props, "Status");
+  out.Status열_실제이름 = statusKey;
+  out.Status열_타입 = statusProp ? statusProp.type : null;
+  out.Status에서_읽은값 = readStatus(statusProp);
+  out.게시상태로_인정됨 = isPublished(out.Status에서_읽은값);
+  out.부모타입 = (page.parent || {}).type || null;
+  out.우리DB소속 = normId((page.parent || {}).database_id) === normId(dbId);
   const [likeKey, likeProp] = findProp(props, LIKE_PROP);
   out.Likes열_찾음 = !!likeKey;
   out.Likes열_실제이름 = likeKey;
@@ -127,18 +150,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1) 지금 값 읽기 + 이 페이지가 실제로 게시된 뉴스인지 확인
-    const r = await fetch(`https://api.notion.com/v1/pages/${pageId}`, { headers: headers(token) });
-    if (!r.ok) {
-      res.status(r.status === 404 ? 404 : 502).json({ error: "노션 페이지를 찾지 못했습니다." });
+    // 1) 지금 값 읽기 + 이 페이지가 우리 뉴스트래킹 DB의 글이 맞는지 확인
+    const page = await getPage(pageId, token);
+    if (!page) {
+      res.status(404).json({ error: "노션 페이지를 찾지 못했습니다." });
       return;
     }
-    const page = await r.json();
     const props = page.properties || {};
 
+    // 우리 DB 소속이거나, 게시 상태이면 통과시킵니다 (둘 중 하나만 맞으면 됨)
+    const parent = page.parent || {};
+    const inOurDb = !!normId(parent.database_id) && normId(parent.database_id) === normId(process.env.NOTION_DB_ID);
     const [, statusProp] = findProp(props, "Status");
-    if (!PUBLISH_STATUS.includes(normStatus(readStatus(statusProp)))) {
-      res.status(403).json({ error: "게시된 글이 아닙니다." });
+    const statusText = readStatus(statusProp);
+    if (!inOurDb && !isPublished(statusText)) {
+      res.status(403).json({
+        error: "게시된 글이 아닙니다.",
+        detail: `Status에서 읽은 값: "${statusText}" / 부모: ${parent.type || "알수없음"}`,
+      });
       return;
     }
 
@@ -153,14 +182,18 @@ export default async function handler(req, res) {
     const current = Number(likeProp.number) || 0;
     const next = Math.max(0, current + delta);
 
-    // 2) 새 값 쓰기
-    const w = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
-      method: "PATCH",
-      headers: headers(token),
-      body: JSON.stringify({ properties: { [likeKey]: { number: next } } }),
-    });
+    // 2) 새 값 쓰기 (새 구조 → 옛 구조 순으로 시도)
+    let w = null, detail = "";
+    for (const v of ["2025-09-03", "2022-06-28"]) {
+      w = await fetch(`https://api.notion.com/v1/pages/${pageId}`, {
+        method: "PATCH",
+        headers: headers(token, v),
+        body: JSON.stringify({ properties: { [likeKey]: { number: next } } }),
+      });
+      if (w.ok) break;
+      detail = (await w.text()).slice(0, 300);
+    }
     if (!w.ok) {
-      const detail = (await w.text()).slice(0, 300);
       res.status(502).json({
         error: "노션에 저장하지 못했습니다. 통합 설정에서 '콘텐츠 편집' 권한이 켜져 있는지 확인해주세요.",
         detail,
