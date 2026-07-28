@@ -242,6 +242,14 @@
   .card .foot .ctopics{display:flex;align-items:center;gap:5px;min-width:0;margin-left:auto;padding-left:8px;overflow:hidden}
   .card .foot .ctopics .tag{font-size:10.5px;padding:2px 8px;white-space:nowrap;max-width:112px;overflow:hidden;text-overflow:ellipsis}
   /* 좋아요는 같은 줄 맨 오른쪽(주제 배지 뒤) */
+  /* 조회수 */
+  .card .foot .cview{display:inline-flex;align-items:center;gap:4px;margin-left:auto;padding-left:6px;color:var(--faint);font-weight:700;white-space:nowrap}
+  .card .foot .cview svg{width:13px;height:13px;flex:none;opacity:.75}
+  .card .foot .cview + .clike{margin-left:0;padding-left:8px}
+  .card .foot .ctopics + .cview{margin-left:0;padding-left:8px}
+  .article .abyline .aview{display:inline-flex;align-items:center;gap:5px;color:var(--faint);font-weight:600;white-space:nowrap}
+  .article .abyline .aview svg{width:14px;height:14px;flex:none;opacity:.8}
+  .article .abyline .aview b{font-weight:700;color:var(--muted)}
   .card .foot .clike{display:inline-flex;align-items:center;gap:4px;margin-left:auto;padding-left:6px;color:var(--faint);font-weight:700;white-space:nowrap}
   .card .foot .ctopics + .clike{margin-left:0;padding-left:8px}
   .card .foot .clike svg{width:13px;height:13px;flex:none}
@@ -262,7 +270,11 @@
   #app.wide{max-width:var(--maxw)}
   .post-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:18px;align-items:start}
   .post-main{min-width:0}
-  .post-layout .article{margin-top:0;padding:32px 30px}
+  /* 본문은 박스 없이 배경 위에 그대로 (참고: 뉴닉 스타일) */
+  .post-layout .article{margin-top:0;padding:4px 2px 0;background:none;border:none;box-shadow:none}
+  .post-layout .article .abyline{padding-bottom:20px;margin-bottom:6px;border-bottom:1px solid var(--border)}
+  .post-layout .article .insight{background:none;border:none;padding:0;margin-top:2px}
+  .post-layout .article .insight pre,.post-layout .article .insight table{background:var(--bg-soft)}
 
   /* 기사 상단 대표 이미지 (제목 박스 위) — 2:1 프레임 */
   .pcover{position:relative;display:block;width:100%;aspect-ratio:2/1;overflow:hidden;border-radius:var(--radius);
@@ -289,7 +301,7 @@
   .article .insight figure.ifig img{width:100%;max-height:420px;object-fit:contain;display:block;
                                     border:1px solid var(--border);border-radius:11px;background:var(--bg-soft)}
   .article .insight figure.ifig figcaption{margin-top:7px;font-size:12.5px;color:var(--faint);text-align:center;line-height:1.6}
-  .post-layout .article h1{font-size:26px}
+  .post-layout .article h1{font-size:28px;line-height:1.38;margin-bottom:16px}
   .post-side{position:sticky;top:82px;display:grid;grid-template-rows:1fr 1fr;gap:16px;min-width:0}
   .spanel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 16px 14px;box-shadow:var(--shadow);
           display:flex;flex-direction:column;min-height:0}
@@ -441,6 +453,36 @@ function setLiked(pageId, on){
   }catch(e){}
 }
 function isLiked(pageId){ return !!pageId && likedSet().has(pageId); }
+
+/* ---- 조회수 ----
+   같은 브라우저에서 같은 글은 하루 1회만 집계합니다(새로고침으로 부풀지 않게).
+   노션 DB에 "Views" 숫자 열이 없으면 아무 일도 일어나지 않고 조용히 넘어갑니다. */
+const VIEW_KEY = "bay_viewed_v1";
+const fmtCount = (n)=> Number(n||0).toLocaleString("ko-KR");
+function countView(p){
+  if(!p || !p.pageId || USING_SAMPLE) return;
+  const today = new Date().toISOString().slice(0,10);
+  let seen = {};
+  try{ seen = JSON.parse(localStorage.getItem(VIEW_KEY)||"{}"); }catch(e){ seen = {}; }
+  if(seen[p.pageId] === today) return;                 // 오늘 이미 읽은 글
+  seen[p.pageId] = today;
+  // 오래된 기록 정리 (최근 300건만 유지)
+  const keys = Object.keys(seen);
+  if(keys.length > 300) keys.slice(0, keys.length-300).forEach(k=>delete seen[k]);
+  try{ localStorage.setItem(VIEW_KEY, JSON.stringify(seen)); }catch(e){}
+
+  fetch("/api/view",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({pageId:p.pageId})})
+    .then(r=>r.ok?r.json():null)
+    .then(d=>{
+      if(!d || typeof d.views !== "number") return;
+      p.views = d.views;
+      const el = document.getElementById("viewCount");
+      if(el) el.textContent = fmtCount(d.views);
+    })
+    .catch(()=>{});
+}
+const EYE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
 const HEART=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1.1 1L12 21l7.7-7.6 1.1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>`;
 
 function likeBarHtml(p){
@@ -538,12 +580,13 @@ function cardHtml(p, i){
   const delay = Math.min((i||0)*60, 480);
   const n=p.likes||0;
   const like=n>0?`<span class="clike${isLiked(p.pageId)?" on":""}">${HEART}${n}</span>`:"";
+  const view=(p.views||0)>0?`<span class="cview">${EYE}${fmtCount(p.views)}</span>`:"";
   return `<article class="card" style="animation-delay:${delay}ms" onclick="location.hash='#/post/${p.id}'">
     ${thumbHtml(p)}
 ${tagsHtml(p.tags)}
     <h3>${p.title}</h3>
     <div class="foot">${avatarHtml(p.author)}
-      <span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span>${cardTopicsHtml(p)}${like}</div>
+      <span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span>${cardTopicsHtml(p)}${view}${like}</div>
   </article>`;
 }
 
@@ -706,6 +749,7 @@ function viewPost(id){
       <article class="article">${tagsHtml(p.tags)}
         <h1 style="margin-top:12px">${p.title}</h1>
         <div class="abyline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span>
+          <span class="aview">${EYE}읽음 <b id="viewCount">${fmtCount(p.views)}</b></span>
           ${(p.topics||[]).filter(Boolean).map(t=>`<a class="tag ${tagClass(t)} tlink" href="#/topic/${encodeURIComponent(t)}">${t}</a>`).join("")}</div>
         <h4>요약</h4><p class="psum">${fmtSummary(p.summary)}</p>
         <h4>인사이트</h4><div class="insight">${insightHtml(p)}</div>
@@ -731,6 +775,7 @@ function router(){
   else{html=viewHome();}
   $app.innerHTML=html;
   $app.classList.toggle("wide", route==="post");
+  if(route==="post"){ const cur=POSTS.find(x=>String(x.id)===String(arg)); if(cur) countView(cur); }
   document.querySelectorAll(".links a").forEach(a=>a.classList.toggle("active",a.dataset.route===active));
   window.scrollTo(0,0);
 }

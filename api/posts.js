@@ -324,10 +324,12 @@ export default async function handler(req, res) {
         const sourceProp = getProp(p, "Source");
         const tagProp = getProp(p, "Tag");
         const likeProp = getProp(p, "Likes");
+        const viewProp = getProp(p, "Views");
         return {
           id: i + 1,
           pageId: page.id,                                   // 좋아요 저장에 쓰는 고유 주소
           likes: (likeProp && Number(likeProp.number)) || 0,
+          views: (viewProp && Number(viewProp.number)) || 0,
           status,
           title: readText(getProp(p, "Title")),
           author: readAuthor(getProp(p, "Author")),
