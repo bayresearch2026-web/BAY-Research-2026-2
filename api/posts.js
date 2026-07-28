@@ -154,12 +154,42 @@ function rtHtml(arr) {
     })
     .join("");
 }
-// 한 블록의 자식들을 모두(페이지네이션 포함) 가져오기
+// 토글·단(컬럼)·콜아웃처럼 "안에 또 내용이 들어가는" 블록들.
+// 예전에는 맨 바깥 블록만 읽어서 토글 안에 넣은 이미지가 통째로 사라졌습니다.
+const CONTAINER_TYPES = [
+  "toggle", "column_list", "column", "callout", "quote", "synced_block",
+  "bulleted_list_item", "numbered_list_item", "to_do", "template",
+];
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// 한 번에 너무 많은 요청을 보내면 노션이 429(요청 과다)로 막아버려서
+// 이미지가 "어떤 글은 되고 어떤 글은 안 되는" 현상이 생깁니다.
+// 그래서 동시에 처리하는 개수를 제한합니다.
+async function mapLimit(items, limit, fn) {
+  const out = new Array(items.length);
+  let i = 0;
+  const workers = new Array(Math.min(limit, items.length)).fill(0).map(async () => {
+    while (i < items.length) {
+      const idx = i++;
+      out[idx] = await fn(items[idx], idx);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
+// 한 블록의 자식들을 모두(페이지네이션 포함) 가져오기 — 429는 잠깐 쉬었다 재시도
 async function fetchChildren(blockId, token) {
   let out = [], cursor;
   do {
     const url = `https://api.notion.com/v1/blocks/${blockId}/children?page_size=100` + (cursor ? `&start_cursor=${cursor}` : "");
-    const r = await fetch(url, { headers: headers(token, "2022-06-28") });
+    let r = await fetch(url, { headers: headers(token, "2022-06-28") });
+    if (r.status === 429) {
+      const wait = Math.min(1500, (Number(r.headers.get("retry-after")) || 1) * 1000);
+      await sleep(wait);
+      r = await fetch(url, { headers: headers(token, "2022-06-28") });
+    }
     if (!r.ok) break;
     const d = await r.json();
     out = out.concat(d.results || []);
@@ -172,7 +202,12 @@ async function fetchChildren(blockId, token) {
 //       노션에서 새로 받아오므로(캐시 60초) 평소 사용에는 문제가 없습니다.
 function imageUrl(node) {
   if (!node) return "";
-  return (node.external && node.external.url) || (node.file && node.file.url) || "";
+  return (
+    (node.external && node.external.url) ||
+    (node.file && node.file.url) ||
+    (node.file_upload && node.file_upload.url) ||   // 새 업로드 방식
+    ""
+  );
 }
 // 페이지 표지(cover) 이미지
 function pageCoverUrl(page) {
@@ -210,10 +245,37 @@ function looksLikeSource(txt) {
   return t.length <= 30 && SOURCE_LOOSE_RE.test(t);
 }
 
+// 토글·단(컬럼) 안에 들어 있는 블록까지 순서를 지키며 평평하게 펼칩니다.
+async function flattenBlocks(blockId, token, depth) {
+  const d = depth || 0;
+  const out = [];
+  if (d > 3) return out;                       // 너무 깊게 들어가지 않도록 안전장치
+  const blocks = await fetchChildren(blockId, token);
+  for (const b of blocks) {
+    const t = b.type;
+    // 단(컬럼)·동기화 블록은 그 자체로는 보여줄 내용이 없으므로 껍데기는 건너뜁니다
+    if (t !== "column_list" && t !== "column" && t !== "synced_block") out.push(b);
+    if (b.has_children && CONTAINER_TYPES.indexOf(t) !== -1) {
+      const kids = await flattenBlocks(b.id, token, d + 1);
+      for (const k of kids) out.push(k);
+    }
+  }
+  return out;
+}
+
 async function readInsightBody(pageId, token) {
   const images = [];
+  let imagesHtml = "";     // 본문에 보여줄 이미지들만 따로 모아둔 HTML
   try {
-    const blocks = await fetchChildren(pageId, token);
+    const blocks = await flattenBlocks(pageId, token);
+    // 글 맨 앞에 놓인 이미지는 "표지"로 보고 상단 배너로 올립니다(본문에서는 생략).
+    // 글 중간에 넣은 이미지는 넣은 자리에 그대로 보여줍니다.
+    const firstMeaningful = blocks.find((b) => {
+      const t = b.type, n = b[t] || {};
+      if (t === "image" || t === "table" || t === "divider") return true;
+      return (n.rich_text || []).map((x) => x.plain_text).join("").trim().length > 0;
+    });
+    const leadIsTop = !!firstMeaningful && firstMeaningful.type === "image";
     let html = "", listBuf = "", listTag = "";
     let pendingImg = null;   // 다음 블록이 출처 줄인지 보려고 이미지를 잠깐 들고 있습니다
     // 번호 목록이 문단 때문에 끊겨도 1로 되돌아가지 않도록 번호를 이어서 셉니다
@@ -223,17 +285,23 @@ async function readInsightBody(pageId, token) {
       html += listTag === "ol" ? `<ol start="${olStart}">${listBuf}</ol>` : `<ul>${listBuf}</ul>`;
       listBuf = ""; listTag = "";
     };
-    // 들고 있던 이미지를 실제로 내보냅니다 (첫 이미지는 상단 배너로 가므로 본문에서 제외)
+    // 들고 있던 이미지를 실제로 내보냅니다.
+    // 글 맨 앞에 놓인 표지용 이미지 1장만 본문에서 빼고, 나머지는 전부 제자리에 표시합니다.
     const flushImage = () => {
       if (!pendingImg) return;
       const im = pendingImg;
       pendingImg = null;
       images.push(im);
-      if (images.length > 1) {
-        flush();
-        html += `<figure class="ifig"><img src="${esc(im.url)}" alt="${esc(im.capTxt)}" loading="lazy">` +
-                (im.capHtml ? `<figcaption>${im.capHtml}</figcaption>` : "") + `</figure>`;
-      }
+      const isTopCover = images.length === 1 && leadIsTop;
+      if (isTopCover) return;
+      // 노션에 올린 이미지 주소는 시간이 지나면 만료됩니다. 그때 깨진 아이콘 대신 조용히 사라지게 합니다.
+      const fig =
+        `<figure class="ifig"><img src="${esc(im.url)}" alt="${esc(im.capTxt)}" loading="lazy"` +
+        ` onerror="this.closest('figure').remove()">` +
+        (im.capHtml ? `<figcaption>${im.capHtml}</figcaption>` : "") + `</figure>`;
+      flush();
+      html += fig;
+      imagesHtml += fig;
     };
     for (const b of blocks) {
       const t = b.type, node = b[t] || {};
@@ -291,9 +359,9 @@ async function readInsightBody(pageId, token) {
     }
     flushImage();
     flush();
-    return { html, images };
+    return { html, images, imagesHtml, leadIsTop };
   } catch (e) {
-    return { html: "", images };
+    return { html: "", images, imagesHtml: "", leadIsTop: false };
   }
 }
 
@@ -353,24 +421,33 @@ export default async function handler(req, res) {
     }
 
     // 3) 변환
-    let posts = await Promise.all(
-      results.map(async (page, i) => {
+    // 동시에 6개씩만 처리 — 노션 요청 제한(429)에 걸려 이미지가 누락되는 것을 막습니다
+    let posts = await mapLimit(results, 6,
+      (async (page, i) => {
         const p = page.properties || {};
         const status = readStatus(getProp(p, "Status"));
         // 인사이트: Insight 속성에 글이 있으면 그 텍스트를 HTML 문단으로, 없으면 페이지 본문(표 포함)을 HTML로
         const insightProp = readText(getProp(p, "Insight"));
-        let insight = "", insightMd = "", bodyImages = [];
+        // 본문(블록)은 "항상" 읽습니다.
+        // 예전에는 Insight 속성에 글자가 있으면 본문을 통째로 건너뛰어서,
+        // 본문에 넣은 이미지가 전부 사라졌습니다. (이미지가 안 뜨던 가장 큰 원인)
+        const body = await readInsightBody(page.id, token);
+        const bodyImages = body.images;
+        let insight = "", insightMd = "", extraImagesHtml = "";
         if (meaningfulInsight(insightProp)) {
-          // 속성에 적힌 글은 마크다운 원문 그대로 넘기고, 화면에서 marked.js가 해석합니다
+          // 속성에 적힌 글은 마크다운 원문 그대로 넘기고, 화면에서 marked.js가 해석합니다.
+          // 본문에 넣어둔 이미지는 그 아래에 이어 붙여 함께 보여줍니다.
           insightMd = insightProp;
+          extraImagesHtml = body.imagesHtml;
         } else {
-          const body = await readInsightBody(page.id, token);
           insight = body.html;
-          bodyImages = body.images;
         }
         // 대표 이미지: 본문 첫 이미지 → 페이지 표지 → Image/썸네일 속성 순
         const first = bodyImages[0] || null;
         const cover = (first && first.url) || pageCoverUrl(page) || readImageProp(p) || "";
+        // 이 대표 이미지가 본문 안에도 그대로 나오는지 여부.
+        // 나온다면 기사 상단 배너는 생략해 같은 사진이 두 번 뜨지 않게 합니다.
+        const coverInBody = !!first && !body.leadIsTop;
         // 이미지 출처 = 노션에서 그 이미지 밑에 적은 캡션
         const coverCaption = (first && first.capHtml) || "";
         const dateProp = getProp(p, "Date of Issue");
@@ -390,15 +467,16 @@ export default async function handler(req, res) {
           summary: readText(getProp(p, "Content Summary")),
           insight,
           insightMd,
+          extraImagesHtml,                                   // Insight 속성을 쓸 때 본문에 있던 이미지들
           cover,                                             // 상단 배너 / 카드 썸네일용 대표 이미지
+          coverInBody,                                       // 대표 이미지가 본문에도 나오는지
           coverCaption,                                      // 이미지 출처 (노션 캡션)
           source: readUrl(sourceProp),
           date: (dateProp && dateProp.date && dateProp.date.start) || "",
           tags: tagProp && tagProp.multi_select ? tagProp.multi_select.map((t) => t.name) : [],
           topics: readTopics(getTopicProp(p)[1]),
         };
-      })
-    );
+      }));
 
     // 진단 모드: 원본 개수/상태값 확인
     if (debug) {
@@ -414,6 +492,9 @@ export default async function handler(req, res) {
         주제_있는_글수: posts.filter((x) => (x.topics || []).length).length,
         대표이미지_있는_글수: posts.filter((x) => x.cover).length,
         대표이미지_예시: (posts.find((x) => x.cover) || {}).cover || null,
+        본문에_이미지가_보이는_글수: posts.filter((x) => (x.insight || "").indexOf("ifig") !== -1 || x.extraImagesHtml).length,
+        Insight속성을_쓴_글수: posts.filter((x) => x.insightMd).length,
+        Insight속성_쓰면서_본문이미지도_있는_글수: posts.filter((x) => x.insightMd && x.extraImagesHtml).length,
         찾아본_이름들: TOPIC_NAMES,
         first_row: first
           ? {
@@ -432,7 +513,9 @@ export default async function handler(req, res) {
     posts = posts.filter((x) => x.title && PUBLISH_STATUS.includes(normStatus(x.status)));
     posts.sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
-    res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=300");
+    // 본문까지 모두 읽으므로 조금 더 오래 캐시합니다.
+    // (노션 업로드 이미지 주소는 약 1시간 뒤 만료되므로 그보다 훨씬 짧게 잡습니다)
+    res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
     res.status(200).json(posts);
   } catch (e) {
     res.status(500).json({ error: String(e), diag });

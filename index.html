@@ -683,6 +683,9 @@ function thumbHtml(p){
 }
 function coverHtml(p){
   if(!p.cover) return "";
+  // 대표 이미지가 인사이트 본문 안에도 그대로 나오는 경우엔 상단 배너를 생략합니다.
+  // (같은 사진이 위아래로 두 번 뜨는 것을 막기 위해서입니다. 카드 썸네일에는 계속 쓰입니다)
+  if(p.coverInBody) return "";
   // 이미지 출처 = 노션에서 그 이미지 밑에 적어둔 캡션 (없으면 표시 안 함)
   const cap = (p.coverCaption||"").trim();
   return `<figure class="pcwrap">
@@ -898,11 +901,13 @@ function mdToHtml(src){
   }).join("");
 }
 function insightHtml(p){
-  if(p.insightMd&&String(p.insightMd).trim()) return mdToHtml(p.insightMd);
+  // Insight 속성에 글을 적은 경우에도, 노션 본문에 넣어둔 이미지는 그 아래에 이어 붙입니다
+  const imgs=String(p.extraImagesHtml||"");
+  if(p.insightMd&&String(p.insightMd).trim()) return mdToHtml(p.insightMd)+imgs;
   const s=String(p.insight||"");
-  if(!s.trim()) return "";
+  if(!s.trim()) return imgs;
   if(/<[a-z]/i.test(s)) return s;
-  return looksLikeMd(s)?mdToHtml(s):`<p>${s}</p>`;
+  return (looksLikeMd(s)?mdToHtml(s):`<p>${s}</p>`)+imgs;
 }
 /* 사이드바용 컴팩트 카드 */
 function sideCardHtml(p,cur){
