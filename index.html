@@ -158,21 +158,26 @@
   .topics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
   @media(max-width:1040px){.topics{grid-template-columns:repeat(2,minmax(0,1fr))}}
   @media(max-width:640px){.topics{grid-template-columns:minmax(0,1fr)}}
-  .topic-card{min-width:0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;
-    display:flex;flex-direction:column;gap:9px;transition:transform .15s,border-color .15s,box-shadow .15s}
+  /* 최신 기사 카드(.card)와 동일한 톤 — 테두리·그림자·모서리·전환 효과를 맞춥니다 */
+  .topic-card{min-width:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;
+    display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow);
+    transition:transform .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s,border-color .2s;
+    opacity:0;transform:translateY(10px);animation:cardIn .5s cubic-bezier(.2,.7,.3,1) forwards}
   .topic-card:hover{transform:translateY(-4px);border-color:var(--border-strong);box-shadow:var(--shadow-hover)}
   .topic-card .thead{display:flex;align-items:center;gap:8px;min-width:0}
   .topic-card .tag{font-size:12px;padding:4px 11px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .topic-card .ct{color:var(--faint);font-size:12.5px;font-weight:700;white-space:nowrap}
-  .topic-card .peek{display:flex;flex-direction:column;gap:4px;min-width:0;margin-top:2px;padding-top:9px;border-top:1px solid var(--border)}
+  .topic-card .ct{margin-left:auto;color:var(--faint);font-size:13px;font-weight:700;white-space:nowrap}
+  .topic-card .peek{display:flex;flex-direction:column;gap:7px;min-width:0;margin-top:auto;padding-top:11px;border-top:1px solid var(--border)}
   /* 기사 제목 앞 글머리 점. 점은 그대로 두고 제목만 말줄임 처리합니다 */
-  .topic-card .peek span{display:flex;gap:7px;min-width:0;color:var(--muted);font-size:12.5px;line-height:1.5}
-  .topic-card .peek span::before{content:"•";color:var(--border-strong);flex:none}
+  .topic-card .peek span{display:flex;gap:8px;min-width:0;color:var(--text);font-size:13.5px;font-weight:600;line-height:1.5;letter-spacing:-.01em}
+  .topic-card .peek span::before{content:"•";color:var(--accent);opacity:.55;flex:none;font-weight:900}
+  .topic-card:hover .peek span{color:var(--muted)}
   .topic-card .peek span i{font-style:normal;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   /* 미분류는 주제가 아니라 "할 일"에 가까우므로 한 줄 전체를 쓰고 점선으로 구분합니다 */
   .topic-card.muted{grid-column:1/-1;flex-direction:row;align-items:center;gap:14px;flex-wrap:wrap;
-    background:var(--bg-soft);border-style:dashed;border-color:var(--border-strong)}
-  .topic-card.muted:hover{transform:none;box-shadow:none}
+    background:var(--bg-soft);border-style:dashed;border-color:var(--border-strong);box-shadow:none}
+  .topic-card.muted:hover{transform:translateY(0);box-shadow:none}
+  .topic-card.muted .ct{margin-left:0}
   .topic-card.muted .tag{background:var(--card);color:var(--faint)}
   .topic-card.muted .peek{display:none}
   .topic-card.muted .mhint{color:var(--faint);font-size:12.5px;margin-left:auto;font-weight:600}
@@ -293,7 +298,7 @@
           border:1px solid var(--border);background:#fff;box-shadow:var(--shadow)}
   .pcwrap{margin:0 0 16px}
   /* 이미지 출처 (노션 캡션) */
-  .pccap{margin-top:8px;padding:0 2px;font-size:12.5px;line-height:1.6;color:var(--faint);text-align:right}
+  .pccap{margin-top:8px;padding:0 2px;font-size:13px;font-weight:600;line-height:1.6;color:var(--faint);text-align:right}
   .pccap a{color:var(--muted);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
   .pcover img{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;display:block}
   /* 카드 썸네일 — 16:9 프레임 */
@@ -663,13 +668,12 @@ function viewTopics(){
   const only=names.length===1&&names[0]===NO_TOPIC;
   return `<div class="sec-head" style="margin-top:34px"><h2>주제별</h2><span>관심 주제로 모아보기</span></div>
   ${only?`<div class="banner">노션 DB에 <b>Topic</b> 열을 만들고 글마다 주제를 골라주시면 여기에 나뉘어 표시됩니다.</div>`:""}
-  <div class="topics">${names.map(n=>{
+  <div class="topics">${names.map((n,i)=>{
     const c=map[n].length, no=n===NO_TOPIC;
-    return `<div class="topic-card${no?" muted":""}" onclick="location.hash='#/topic/${encodeURIComponent(n)}'">
-      <div class="thead"><span class="tag ${tagClass(n)}">${n}</span>${no?`<span class="ct">${c}건</span>`:""}</div>
+    return `<div class="topic-card${no?" muted":""}" style="animation-delay:${Math.min(i*60,480)}ms" onclick="location.hash='#/topic/${encodeURIComponent(n)}'">
+      <div class="thead"><span class="tag ${tagClass(n)}">${n}</span><span class="ct">${c}건</span></div>
       ${no?`<span class="mhint">아직 주제를 정하지 않은 글 — 노션에서 분류하면 위로 올라갑니다</span>`
-          :`<div class="ct">${c}건</div>
-            <div class="peek">${map[n].slice(0,3).map(p=>`<span><i>${p.title}</i></span>`).join("")}</div>`}
+          :`<div class="peek">${map[n].slice(0,3).map(p=>`<span><i>${p.title}</i></span>`).join("")}</div>`}
     </div>`;}).join("")}</div>`;
 }
 function viewTopic(name){
