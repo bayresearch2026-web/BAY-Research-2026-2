@@ -257,6 +257,7 @@
   #app.wide{max-width:1280px}
   .post-layout{display:grid;grid-template-columns:2fr 1fr;gap:22px;align-items:start}
   .post-main{min-width:0}
+  .post-layout .article{margin-top:0}
   .post-side{position:sticky;top:82px;display:grid;grid-template-rows:1fr 1fr;gap:16px;min-width:0}
   .spanel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 16px 14px;box-shadow:var(--shadow);
           display:flex;flex-direction:column;min-height:0}
@@ -624,7 +625,7 @@ function postSideHtml(p){
       <a class="smore" href="#/">전체 보기 →</a>
     </section>
     <section class="spanel">
-      <div class="sh"><h3>같은 주제</h3>${topic?`<span>${topic}</span>`:""}</div>
+      <div class="sh"><h3>관련 이슈 더보기</h3>${topic?`<span>${topic}</span>`:""}</div>
       <div class="slist">${related.length?related.map(x=>sideCardHtml(x)).join("")
         :`<div class="sempty">${topics.length?"같은 주제의 다른 글이 아직 없습니다.":"이 글에는 주제가 지정되어 있지 않습니다."}</div>`}</div>
       <a class="smore" href="${topic?`#/topic/${encodeURIComponent(topic)}`:"#/topics"}">주제별 보기 →</a>
