@@ -1040,9 +1040,12 @@ function applyAuthorMeta(authorsData){
 }
 function loadData(){
   $app.innerHTML=`<div class="loading"><div class="spinner"></div>데이터를 불러오는 중…</div>`;
+  // cache:"no-cache" — 브라우저가 예전 화면을 그대로 쓰지 않고 매번 서버에 확인합니다.
+  // (서버·CDN 캐시는 그대로 살아 있어서 속도는 그대로입니다)
+  const opt = { cache:"no-cache" };
   Promise.all([
-    fetch("/api/posts").then(r=>{ if(!r.ok) throw new Error("no api"); return r.json(); }).catch(()=>null),
-    fetch("/api/authors").then(r=> r.ok ? r.json() : []).catch(()=>[])
+    fetch("/api/posts", opt).then(r=>{ if(!r.ok) throw new Error("no api"); return r.json(); }).catch(()=>null),
+    fetch("/api/authors", opt).then(r=> r.ok ? r.json() : []).catch(()=>[])
   ]).then(([data, authorsData])=>{
     if(Array.isArray(data) && data.length){ POSTS=data; USING_SAMPLE=false; }
     else { POSTS=SAMPLE; USING_SAMPLE=true; }

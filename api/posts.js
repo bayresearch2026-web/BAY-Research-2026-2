@@ -570,9 +570,14 @@ export default async function handler(req, res) {
     posts = posts.filter((x) => x.title && PUBLISH_STATUS.includes(normStatus(x.status)));
     posts.sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
-    // 본문까지 모두 읽으므로 조금 더 오래 캐시합니다.
-    // (노션 업로드 이미지 주소는 약 1시간 뒤 만료되므로 그보다 훨씬 짧게 잡습니다)
-    res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
+    // 캐시 정책
+    //  - max-age=0        : 브라우저는 매번 서버에 "바뀐 거 있나요?" 확인 (오래된 화면 방지)
+    //  - s-maxage=60      : CDN에는 1분만 저장 (노션을 너무 자주 두드리지 않기 위해)
+    //  - stale-while-...  : 1분이 지나면 일단 예전 것을 보여주고 뒤에서 새로 받아옵니다
+    // → 노션에서 글·이미지를 바꾸면 길어도 1~2분 안에 반영됩니다.
+    // 주소 뒤에 ?fresh=1 을 붙이면 캐시를 완전히 무시하고 지금 바로 다시 읽습니다.
+    if (req.query && req.query.fresh) res.setHeader("Cache-Control", "no-store");
+    else res.setHeader("Cache-Control", "public, max-age=0, s-maxage=60, stale-while-revalidate=120");
     res.status(200).json(posts);
   } catch (e) {
     res.status(500).json({ error: String(e), diag });
