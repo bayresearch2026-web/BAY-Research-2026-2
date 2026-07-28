@@ -387,6 +387,59 @@
   .ttab:hover{color:var(--text);border-color:var(--border)}
   .ttab.on{background:var(--accent-soft);border-color:rgba(11,92,255,.25);color:var(--accent)}
   .ttab .tn{font-weight:600;opacity:.65;margin-left:5px}
+
+  /* =========================================================================
+     커서 · 호버 인터랙션 (디자인 요소)
+     - 마우스가 있는 기기(PC)에서만 적용됩니다. 터치 기기는 자동으로 무시됩니다.
+     ========================================================================= */
+  @media (hover:hover) and (pointer:fine){
+
+    /* --- 1) BAY 크리스탈 로고 커서 --- */
+    /* 페이지 전체: 작은 크리스탈 */
+    body, body *{
+      cursor:image-set(url("assets/cursor-crystal-sm.png") 1x, url("assets/cursor-crystal-sm@2x.png") 2x) 12 11, auto;
+    }
+    /* 글자 입력·선택 영역은 기본 커서 유지 (가독성) */
+    input, textarea, [contenteditable]{cursor:text}
+    /* 클릭 가능한 요소 위: 큰 크리스탈 */
+    a, button, .card, .card *, .topic-card, .topic-card *, .author-card, .author-card *,
+    .scard, .scard *, .fitem, .fitem *, .tag.tlink, .ttab, .back, .likebtn, .nav .links a{
+      cursor:image-set(url("assets/cursor-crystal.png") 1x, url("assets/cursor-crystal@2x.png") 2x) 18 17, pointer;
+    }
+    .likebtn:disabled{
+      cursor:image-set(url("assets/cursor-crystal-sm.png") 1x, url("assets/cursor-crystal-sm@2x.png") 2x) 12 11, default;
+    }
+
+    /* --- 2) 호버 효과 강화 (순수 CSS) --- */
+    /* 카드가 조금 더 살아나도록 */
+    .card:hover, .topic-card:hover{transform:translateY(-6px) scale(1.012)}
+    .author-card:hover{transform:translateY(-6px) scale(1.015)}
+
+    /* 카드 안 태그가 하이라이트 */
+    .card .tag{transition:background .2s,color .2s}
+    .card:hover .tag{background:var(--accent);color:#fff}
+
+    /* 카드 하단에 '자세히 →' 가 슬며시 등장 */
+    .card .foot::after{content:"자세히 →";margin-left:auto;color:var(--accent);font-weight:800;font-size:12.5px;
+      opacity:0;transform:translateX(-6px);transition:opacity .25s cubic-bezier(.2,.7,.3,1),transform .25s cubic-bezier(.2,.7,.3,1)}
+    .card:hover .foot::after{opacity:1;transform:translateX(0)}
+
+    /* 상단 메뉴 밑줄이 왼쪽에서 오른쪽으로 그려짐 */
+    .nav .links a{position:relative}
+    .nav .links a::after{content:"";position:absolute;left:14px;right:14px;bottom:4px;height:2px;border-radius:2px;
+      background:var(--accent);transform:scaleX(0);transform-origin:right;transition:transform .3s cubic-bezier(.2,.7,.3,1)}
+    .nav .links a:hover::after{transform:scaleX(1);transform-origin:left}
+    .nav .links a.active::after{transform:scaleX(0)}
+
+    /* 주제 탭 살짝 떠오름 */
+    .ttab:hover{transform:translateY(-1px)}
+  }
+
+  /* 애니메이션 최소화 설정을 켠 사용자는 움직임 없이 */
+  @media (prefers-reduced-motion:reduce){
+    .card:hover,.topic-card:hover,.author-card:hover{transform:none!important}
+    .nav .links a::after,.card .foot::after{transition:none!important}
+  }
 </style>
 </head>
 <body>
