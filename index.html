@@ -706,10 +706,21 @@ function fitCover(img){
 window.fitCover = fitCover;
 
 /* 대표 이미지 — 카드 썸네일 / 기사 상단 배너. 이미지가 없거나 깨지면 자동으로 사라집니다 */
+/* 이미지가 안 뜰 때: ① 우리 서버 중계(/api/img)가 실패하면 원본 주소로 한 번 더 시도
+   ② 그것도 실패하면 자리를 지우고 글만 보여줍니다.
+   언론사 이미지가 핫링크 차단으로 막히는 경우를 대비한 안전장치입니다. */
+function imgFallback(el, killSel){
+  const raw = el.dataset && el.dataset.raw;
+  if(raw && !el.dataset.retried){ el.dataset.retried="1"; el.src=raw; return; }
+  const box = killSel ? el.closest(killSel) : el.closest("figure");
+  if(box) box.remove(); else el.remove();
+}
+window.imgFallback = imgFallback;
+
 function thumbHtml(p){
   if(!p.cover) return "";
-  return `<div class="thumb" data-fr="1.778"><img src="${p.cover}" alt="" loading="lazy"
-    onload="fitCover(this)" onerror="this.closest('.thumb').remove()"></div>`;
+  return `<div class="thumb" data-fr="1.778"><img src="${p.cover}" data-raw="${p.coverRaw||""}" alt="" loading="lazy"
+    referrerpolicy="no-referrer" onload="fitCover(this)" onerror="imgFallback(this,'.thumb')"></div>`;
 }
 function coverHtml(p){
   if(!p.cover) return "";
@@ -719,8 +730,8 @@ function coverHtml(p){
   // 이미지 출처 = 노션에서 그 이미지 밑에 적어둔 캡션 (없으면 표시 안 함)
   const cap = (p.coverCaption||"").trim();
   return `<figure class="pcwrap">
-    <div class="pcover" data-fr="2"><img src="${p.cover}" alt="${(p.title||"").replace(/"/g,"&quot;")}"
-      onload="fitCover(this)" onerror="this.closest('.pcwrap').remove()"></div>
+    <div class="pcover" data-fr="2"><img src="${p.cover}" data-raw="${p.coverRaw||""}" alt="${(p.title||"").replace(/"/g,"&quot;")}"
+      referrerpolicy="no-referrer" onload="fitCover(this)" onerror="imgFallback(this,'.pcwrap')"></div>
     ${cap?`<figcaption class="pccap">${cap}</figcaption>`:""}
   </figure>`;
 }
@@ -769,7 +780,8 @@ const DASH_TOPIC_N = 6;  // 주제 탭마다 보여줄 기사 수 (3개씩 두 �
 
 function featMainHtml(p){
   const cover = p.cover
-    ? `<div class="feat-cover" data-fr="2"><img src="${p.cover}" alt="" onload="fitCover(this)" onerror="this.closest('.feat-cover').remove()"></div>` : "";
+    ? `<div class="feat-cover" data-fr="2"><img src="${p.cover}" data-raw="${p.coverRaw||""}" alt=""
+        referrerpolicy="no-referrer" onload="fitCover(this)" onerror="imgFallback(this,'.feat-cover')"></div>` : "";
   const ex = (p.summary||"").replace(/\n/g," ");
   return `<article class="feat-main" onclick="location.hash='#/post/${p.id}'">
     ${cover}

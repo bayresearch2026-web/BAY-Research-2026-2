@@ -210,6 +210,13 @@ function imageUrl(node) {
     ""
   );
 }
+// 이미지는 우리 서버(/api/img)를 거쳐 내보냅니다.
+// 언론사 핫링크 차단·노션 주소 만료 때문에 브라우저에서 직접 부르면 안 뜨는 경우가 많습니다.
+function proxied(u) {
+  if (!u) return "";
+  if (u.indexOf("/") === 0 || u.indexOf("data:") === 0) return u;   // 우리 파일은 그대로
+  return "/api/img?u=" + encodeURIComponent(u);
+}
 // 파일/임베드 블록이 실제로 그림인지 확인 (확장자 또는 노션 파일 저장소 주소)
 function looksLikeImageUrl(u) {
   const s = String(u || "").split("?")[0].toLowerCase();
@@ -305,8 +312,8 @@ async function readInsightBody(pageId, token) {
       if (isTopCover) return;
       // 노션에 올린 이미지 주소는 시간이 지나면 만료됩니다. 그때 깨진 아이콘 대신 조용히 사라지게 합니다.
       const fig =
-        `<figure class="ifig"><img src="${esc(im.url)}" alt="${esc(im.capTxt)}" loading="lazy"` +
-        ` onerror="this.closest('figure').remove()">` +
+        `<figure class="ifig"><img src="${esc(proxied(im.url))}" data-raw="${esc(im.url)}"` +
+        ` alt="${esc(im.capTxt)}" loading="lazy" referrerpolicy="no-referrer" onerror="imgFallback(this)">` +
         (im.capHtml ? `<figcaption>${im.capHtml}</figcaption>` : "") + `</figure>`;
       flush();
       html += fig;
@@ -454,7 +461,8 @@ export default async function handler(req, res) {
         }
         // 대표 이미지: 본문 첫 이미지 → 페이지 표지 → Image/썸네일 속성 순
         const first = bodyImages[0] || null;
-        const cover = (first && first.url) || pageCoverUrl(page) || readImageProp(p) || "";
+        const coverRaw = (first && first.url) || pageCoverUrl(page) || readImageProp(p) || "";
+        const cover = proxied(coverRaw);
         // 이 대표 이미지가 본문 안에도 그대로 나오는지 여부.
         // 나온다면 기사 상단 배너는 생략해 같은 사진이 두 번 뜨지 않게 합니다.
         const coverInBody = !!first && !body.leadIsTop;
@@ -479,6 +487,7 @@ export default async function handler(req, res) {
           insightMd,
           extraImagesHtml,                                   // Insight 속성을 쓸 때 본문에 있던 이미지들
           cover,                                             // 상단 배너 / 카드 썸네일용 대표 이미지
+          coverRaw,                                          // 프록시가 실패했을 때 쓸 원본 주소
           coverInBody,                                       // 대표 이미지가 본문에도 나오는지
           coverCaption,                                      // 이미지 출처 (노션 캡션)
           source: readUrl(sourceProp),
