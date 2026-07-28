@@ -81,6 +81,22 @@ function readTopics(prop) {
   }
   return [];
 }
+// Editor's Picks 열 읽기 — 체크박스가 가장 정확하지만, 선택/텍스트로 만들어도 동작합니다
+const PICK_NAMES = ["Pick", "Picks", "Editor's Pick", "Editors Pick", "에디터픽", "에디터 픽", "추천"];
+const PICK_TRUE = ["true", "yes", "y", "o", "on", "1", "체크", "추천", "픽", "pick"];
+function readPick(props) {
+  for (const n of PICK_NAMES) {
+    const prop = getProp(props, n);
+    if (!prop) continue;
+    if (typeof prop.checkbox === "boolean") return prop.checkbox;   // 체크박스 타입
+    if (prop.select) return !!prop.select.name;                     // 값이 있으면 픽으로 간주
+    if (prop.status) return !!prop.status.name;
+    if (prop.multi_select) return prop.multi_select.length > 0;
+    const txt = readText(prop).trim().toLowerCase();
+    if (txt) return PICK_TRUE.includes(txt);
+  }
+  return false;
+}
 function meaningfulInsight(s) {
   const t = (s || "").trim().toLowerCase();
   return t.length > 0 && t !== "insight" && t !== "insights";
@@ -363,6 +379,7 @@ export default async function handler(req, res) {
         const likeProp = getProp(p, "Likes");
         const viewProp = getProp(p, "Views");
         return {
+          pick: readPick(p),                                 // Editor's Picks 노출 여부
           id: i + 1,
           pageId: page.id,                                   // 좋아요 저장에 쓰는 고유 주소
           likes: (likeProp && Number(likeProp.number)) || 0,

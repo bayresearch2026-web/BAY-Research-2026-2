@@ -299,14 +299,15 @@
 
   /* 프레임보다 세로로 긴 이미지(로고·인포그래픽 등)는 자르지 않고 전부 보여주고,
      남는 좌우 여백은 같은 이미지를 흐리게 깔아 자연스럽게 채웁니다 */
-  .pcover.fit img,.thumb.fit img{object-fit:contain}
-  .pcover.fit img{padding:16px}
+  .pcover.fit img,.thumb.fit img,.feat-cover.fit img{object-fit:contain}
+  .pcover.fit img,.feat-cover.fit img{padding:16px}
   .thumb.fit img{padding:10px}
   .card:hover .thumb.fit img{transform:none}
-  .pcover.fit::before,.thumb.fit::before{content:"";position:absolute;inset:0;z-index:0;
+  .feat-main:hover .feat-cover.fit img{transform:none}
+  .pcover.fit::before,.thumb.fit::before,.feat-cover.fit::before{content:"";position:absolute;inset:0;z-index:0;
     background-image:var(--bgimg);background-size:cover;background-position:center;
     filter:blur(30px) saturate(1.1);transform:scale(1.25)}
-  .pcover.fit::after,.thumb.fit::after{content:"";position:absolute;inset:0;z-index:0;background:rgba(255,255,255,.30)}
+  .pcover.fit::after,.thumb.fit::after,.feat-cover.fit::after{content:"";position:absolute;inset:0;z-index:0;background:rgba(255,255,255,.30)}
   /* 본문 안 이미지 (두 번째 이후) */
   .article .insight figure.ifig{margin:16px 0}
   .article .insight figure.ifig img{width:100%;max-height:420px;object-fit:contain;display:block;
@@ -342,6 +343,50 @@
     .post-layout{grid-template-columns:1fr}
     .post-side{position:static;grid-template-rows:auto auto;margin-top:8px}
   }
+
+  /* ---------- 홈(대시보드) ---------- */
+  /* 왼쪽 큰 기사(2:1 이미지) + 오른쪽 최신 4건 */
+  .feat{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:20px;align-items:stretch}
+  @media(max-width:900px){.feat{grid-template-columns:minmax(0,1fr)}}
+  .feat-main{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;
+    cursor:pointer;box-shadow:var(--shadow);display:flex;flex-direction:column;min-width:0;
+    transition:transform .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s,border-color .2s}
+  .feat-main:hover{transform:translateY(-4px);border-color:var(--border-strong);box-shadow:var(--shadow-hover)}
+  .feat-cover{position:relative;display:block;width:100%;aspect-ratio:2/1;overflow:hidden;background:#fff;flex:none}
+  .feat-cover img{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s ease}
+  .feat-main:hover .feat-cover img{transform:scale(1.03)}
+  .feat-body{padding:18px 22px 20px;display:flex;flex-direction:column;gap:9px;min-width:0}
+  .feat-body .tags{display:flex;gap:6px;flex-wrap:wrap}
+  .feat-body h2{font-size:23px;font-weight:900;letter-spacing:-.03em;line-height:1.35;transition:color .15s;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .feat-main:hover .feat-body h2{color:var(--accent)}
+  .feat-body .fex{color:var(--muted);font-size:14px;line-height:1.7;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .feat-body .foot{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:4px;font-size:13px;color:var(--faint)}
+  .feat-body .foot .who{color:var(--muted);font-weight:700}
+  /* 오른쪽 최신 목록 */
+  .feat-side{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:16px 20px 14px;display:flex;flex-direction:column;min-width:0}
+  .feat-side .fsh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+    padding-bottom:11px;border-bottom:2px solid var(--text)}
+  .feat-side .fsh h3{font-size:17px;font-weight:900;letter-spacing:-.025em}
+  .feat-side .fsh a{font-size:11px;font-weight:800;color:var(--faint);letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
+  .feat-side .fsh a:hover{color:var(--accent)}
+  .flist{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+  .fitem{display:block;padding:13px 0;border-bottom:1px solid var(--border);cursor:pointer;flex:1 1 auto;min-height:0}
+  .fitem:last-child{border-bottom:none}
+  .fitem .ftop{font-size:10.5px;font-weight:800;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
+  .fitem .ftt{font-size:15px;font-weight:800;letter-spacing:-.02em;line-height:1.45;color:var(--text);transition:color .15s;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .fitem:hover .ftt{color:var(--accent)}
+  .fitem .fmeta{margin-top:6px;font-size:11px;color:var(--faint);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  /* 주제별 탭 */
+  .ttabs{display:flex;gap:8px;flex-wrap:wrap;padding-bottom:15px;border-bottom:1px solid var(--border);margin-bottom:18px}
+  .ttab{font-family:inherit;font-size:13px;font-weight:700;padding:7px 15px;border-radius:999px;cursor:pointer;
+    background:var(--bg-soft);border:1px solid transparent;color:var(--muted);transition:.15s;letter-spacing:-.01em}
+  .ttab:hover{color:var(--text);border-color:var(--border)}
+  .ttab.on{background:var(--accent-soft);border-color:rgba(11,92,255,.25);color:var(--accent)}
+  .ttab .tn{font-weight:600;opacity:.65;margin-left:5px}
 </style>
 </head>
 <body>
@@ -360,7 +405,8 @@
       <span class="bt"><b>BAY 리서치팀</b><small>Blockchain at Yonsei · 뉴스트래킹</small></span>
     </a>
     <nav class="links">
-      <a href="#/" data-route="home">최신</a>
+      <a href="#/" data-route="dash">홈</a>
+      <a href="#/latest" data-route="home">최신</a>
       <a href="#/weeks" data-route="weeks">주차별</a>
       <a href="#/topics" data-route="topics">주제별</a>
       <a href="#/authors" data-route="authors">작성자</a>
@@ -382,30 +428,30 @@
 
 /* 배포 전(로컬 미리보기)에 쓰이는 샘플 데이터 */
 const SAMPLE = [
-  {id:1,title:"홍콩 SFC, 토큰화 RWA 펀드 첫 승인 — 제도권 진입 신호탄",author:"노제희",week:2,tags:["RWA","규제동향"],date:"2026-07-18",
+  {id:1,topics:["RWA"],pick:true,title:"홍콩 SFC, 토큰화 RWA 펀드 첫 승인 — 제도권 진입 신호탄",author:"노제희",week:2,tags:["RWA","규제동향"],date:"2026-07-18",
    summary:"홍콩 증권선물위원회(SFC)가 토큰화된 실물자산(RWA) 펀드를 처음으로 정식 승인했다. 국채·회사채를 온체인 토큰으로 발행·거래할 수 있게 되면서 기관 투자자의 온체인 진입 문턱이 크게 낮아졌다는 평가.",
    insight:"그동안 RWA는 규제 불확실성 때문에 파일럿에 머물렀는데, 이번 승인은 아시아 금융허브가 제도적으로 RWA를 인정했다는 점에서 의미가 크다. 한국 당국의 향후 스탠스를 가늠할 레퍼런스가 될 듯.",source:"https://example.com/sfc-rwa"},
-  {id:2,title:"이더리움 재스테이킹 TVL 사상 최고 — 리스크는?",author:"이재환",week:2,tags:["프로젝트","DeFi"],date:"2026-07-17",
+  {id:2,topics:["DeFi"],title:"이더리움 재스테이킹 TVL 사상 최고 — 리스크는?",author:"이재환",week:2,tags:["프로젝트","DeFi"],date:"2026-07-17",
    summary:"리스테이킹 프로토콜의 총예치금(TVL)이 사상 최고치를 경신했다. 수익률 경쟁이 과열되며 담보 중복 사용에 따른 연쇄 청산 위험을 우려하는 목소리도 커지고 있다.",
    insight:"수익률만 보고 들어가기엔 슬래싱 리스크가 겹겹이 쌓인 구조. 예치금 규모보다 담보 재사용 배수를 봐야 진짜 리스크가 보인다.",source:"https://example.com/restaking"},
-  {id:3,title:"美 스테이블코인 법안 상원 통과 — 발행 요건 대폭 강화",author:"배예림",week:2,tags:["규제동향"],date:"2026-07-16",
+  {id:3,topics:["스테이블코인"],pick:true,title:"美 스테이블코인 법안 상원 통과 — 발행 요건 대폭 강화",author:"배예림",week:2,tags:["규제동향"],date:"2026-07-16",
    cover:"assets/og-image.png",
    summary:"미국 상원이 스테이블코인 규제 법안을 통과시켰다. 100% 준비금 보유와 정기 감사가 의무화되며 비은행 발행사의 진입 요건도 명확해졌다.",
    insight:"준비금 투명성이 법제화되면 신뢰도 높은 소수 발행사로 시장이 재편될 가능성. 알고리즘형 스테이블코인엔 사실상 사형선고에 가깝다.",source:"https://example.com/stablecoin-bill"},
-  {id:4,title:"베이스(Base) 온체인 활성 지갑, 옵티미즘 추월",author:"장동현",week:1,tags:["프로젝트","L2"],date:"2026-07-11",
+  {id:4,topics:["기술"],title:"베이스(Base) 온체인 활성 지갑, 옵티미즘 추월",author:"장동현",week:1,tags:["프로젝트","L2"],date:"2026-07-11",
    cover:"assets/crystal.png",
    summary:"코인베이스의 L2 네트워크 베이스의 일일 활성 지갑 수가 옵티미즘을 넘어섰다. 거래소 연동 온보딩과 낮은 수수료가 성장 동력으로 꼽힌다.",
    insight:"L2 경쟁의 승부처는 결국 유저 유입 파이프라인. 거래소를 등에 업은 베이스의 성장은 기술력보다 유통 채널의 힘을 보여주는 사례.",source:"https://example.com/base-growth"},
-  {id:5,title:"쟁글, RWA 프로젝트 시리즈 리포트 3편 공개",author:"이성재",week:1,tags:["RWA"],date:"2026-07-10",
+  {id:5,topics:["RWA"],title:"쟁글, RWA 프로젝트 시리즈 리포트 3편 공개",author:"이성재",week:1,tags:["RWA"],date:"2026-07-10",
    summary:"온체인 데이터 플랫폼 쟁글이 RWA 대표 프로젝트를 분석한 시리즈 리포트 3편을 공개했다. 국채 토큰화, 부동산, 사모신용 세 섹터를 다뤘다.",
    insight:"섹터별 온체인화 난이도가 완전히 다르다는 점이 핵심. 국채는 표준화가 쉬워 빠르게 크지만 부동산은 법적 소유권 이슈로 아직 갈 길이 멀다.",source:"https://example.com/xangle-rwa"},
-  {id:6,title:"SEC, 현물 이더리움 ETF 스테이킹 허용 검토",author:"김재성",week:1,tags:["규제동향","프로젝트"],date:"2026-07-09",
+  {id:6,topics:["규제/법안"],pick:true,title:"SEC, 현물 이더리움 ETF 스테이킹 허용 검토",author:"김재성",week:1,tags:["규제동향","프로젝트"],date:"2026-07-09",
    summary:"미국 SEC가 현물 이더리움 ETF의 스테이킹 기능 포함 여부를 검토 중인 것으로 알려졌다. 승인 시 ETF 투자자도 스테이킹 수익을 받을 수 있게 된다.",
    insight:"ETF에 스테이킹이 붙으면 이자 붙는 이더리움 상품이 되는 셈. 전통 운용사에게 크립토가 채권 대체재로 보이기 시작할 변곡점.",source:"https://example.com/eth-etf-staking"},
-  {id:7,title:"한국 금융위, 법인 가상자산 계좌 단계적 허용 발표",author:"박의혁",week:1,tags:["규제동향"],date:"2026-07-08",
+  {id:7,topics:["규제/법안"],title:"한국 금융위, 법인 가상자산 계좌 단계적 허용 발표",author:"박의혁",week:1,tags:["규제동향"],date:"2026-07-08",
    summary:"금융위원회가 법인의 가상자산 거래소 실명계좌 개설을 단계적으로 허용한다고 밝혔다. 비영리법인·거래소를 시작으로 일반 법인까지 확대할 계획이다.",
    insight:"국내 기관 자금이 합법적으로 온체인에 들어올 통로가 열린다는 의미. 다만 회계·세무 가이드라인이 함께 정비돼야 실제 자금이 움직일 것.",source:"https://example.com/kr-corporate"},
-  {id:8,title:"솔라나 기반 DePIN 프로젝트, 통신 인프라로 확장",author:"장윤선",week:2,tags:["프로젝트"],date:"2026-07-15",
+  {id:8,topics:["기술"],title:"솔라나 기반 DePIN 프로젝트, 통신 인프라로 확장",author:"장윤선",week:2,tags:["프로젝트"],date:"2026-07-15",
    summary:"솔라나 생태계의 대표 DePIN(탈중앙 물리 인프라) 프로젝트가 무선 통신 커버리지 사업으로 영역을 넓혔다. 토큰 인센티브로 개인 기지국 참여를 유도하는 모델.",
    insight:"DePIN은 토큰으로 실물 인프라를 부트스트랩하는 실험. 초기 보상에 의존한 성장이 보상 축소 이후에도 유지되는지가 진짜 시험대다.",source:"https://example.com/depin"}
 ];
@@ -609,8 +655,7 @@ ${tagsHtml(p.tags)}
 }
 
 /* ---- 화면들 ---- */
-function viewHome(){
-  const sorted = [...POSTS].sort((a,b)=> String(b.date).localeCompare(String(a.date)));
+function heroHtml(){
   const banner = USING_SAMPLE ? `<div class="banner">⚙️ 지금은 샘플 데이터로 보이는 중이에요. 노션 연결·배포가 끝나면 실제 데이터가 표시됩니다.</div>`:"";
   return `<section class="hero">
     <div class="hero-art" aria-hidden="true">
@@ -627,9 +672,97 @@ function viewHome(){
       </div>
       ${banner}
     </div>
-  </section>
-  <div class="sec-head"><h2>최신 뉴스트래킹</h2><span>최근 업데이트 순</span></div>
+  </section>`;
+}
+function viewHome(){
+  const sorted = [...POSTS].sort((a,b)=> String(b.date).localeCompare(String(a.date)));
+  return `<div class="sec-head" style="margin-top:34px"><h2>최신 뉴스트래킹</h2><span>최근 업데이트 순 · ${POSTS.length}건</span></div>
   <div class="grid">${sorted.map((p,i)=>cardHtml(p,i)).join("")}</div>`;
+}
+
+/* ---- 홈(대시보드) ----
+   1) 큰 기사 1건 + 오른쪽 최신 4건  2) Editor's Picks 3건  3) 주제별 탭 */
+const DASH_SIDE_N = 4;   // 오른쪽 최신 목록 개수
+const DASH_PICK_N = 3;   // Editor's Picks 개수
+const DASH_TOPIC_N = 3;  // 주제 탭마다 보여줄 기사 수
+
+function featMainHtml(p){
+  const cover = p.cover
+    ? `<div class="feat-cover" data-fr="2"><img src="${p.cover}" alt="" onload="fitCover(this)" onerror="this.closest('.feat-cover').remove()"></div>` : "";
+  const ex = (p.summary||"").replace(/\n/g," ");
+  return `<article class="feat-main" onclick="location.hash='#/post/${p.id}'">
+    ${cover}
+    <div class="feat-body">
+      ${tagsHtml(p.tags)}
+      <h2>${p.title}</h2>
+      ${ex?`<p class="fex">${ex}</p>`:""}
+      <div class="foot">${avatarHtml(p.author)}<span class="who">${p.author||""}</span> · <span>${fmtDate(p.date)}</span>${cardTopicsHtml(p)}</div>
+    </div>
+  </article>`;
+}
+function featItemHtml(p){
+  const t=(p.topics||[]).filter(Boolean)[0]||"";
+  return `<a class="fitem" href="#/post/${p.id}">
+    ${t?`<div class="ftop">${t}</div>`:""}
+    <div class="ftt">${p.title}</div>
+    <div class="fmeta">${p.author||""}${p.date?` · ${fmtDate(p.date)}`:""}</div>
+  </a>`;
+}
+/* 주제 탭을 누르면 아래 기사 3개만 바꿔 그립니다 */
+function dashTopic(name){
+  const grid=document.getElementById("dashTopicGrid");
+  if(!grid) return;
+  const items=POSTS.filter(p=>topicsOf(p).includes(name))
+    .sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,DASH_TOPIC_N);
+  grid.innerHTML=items.map((p,i)=>cardHtml(p,i)).join("")||`<p class="empty">이 주제의 글이 아직 없습니다.</p>`;
+  document.querySelectorAll(".ttab").forEach(b=>b.classList.toggle("on", b.dataset.topic===name));
+  const more=document.getElementById("dashTopicMore");
+  if(more) more.setAttribute("href", `#/topic/${encodeURIComponent(name)}`);
+}
+window.dashTopic = dashTopic;
+
+function viewDash(){
+  if(!POSTS.length) return `${heroHtml()}<p class="empty">아직 글이 없습니다.</p>`;
+  const sorted=[...POSTS].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  // 큰 기사 = 이미지가 있는 가장 최근 글(없으면 그냥 최신 글)
+  const lead=sorted.find(p=>p.cover)||sorted[0];
+  const side=sorted.filter(p=>String(p.id)!==String(lead.id)).slice(0,DASH_SIDE_N);
+
+  // Editor's Picks — 노션 Pick 체크박스가 켜진 글. 없으면 조회수·좋아요 순으로 대신 채웁니다
+  const picked=sorted.filter(p=>p.pick);
+  const usePick=picked.length>0;
+  const picks=(usePick?picked:[...POSTS].sort((a,b)=>
+    ((b.views||0)+(b.likes||0)*3)-((a.views||0)+(a.likes||0)*3) || String(b.date).localeCompare(String(a.date))
+  )).slice(0,DASH_PICK_N);
+
+  // 주제 탭 — 미분류 제외, 글 많은 순
+  const map=topicMap();
+  const tnames=Object.keys(map).filter(n=>n!==NO_TOPIC)
+    .sort((a,b)=>map[b].length-map[a].length || a.localeCompare(b,"ko"));
+  const first=tnames[0]||"";
+  const firstItems=first?map[first].slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,DASH_TOPIC_N):[];
+
+  return `${heroHtml()}
+  <div class="sec-head"><h2>최신 뉴스트래킹</h2><span>가장 먼저 볼 이슈</span></div>
+  <div class="feat">
+    ${featMainHtml(lead)}
+    <div class="feat-side">
+      <div class="fsh"><h3>The Latest</h3><a href="#/latest">전체 보기 →</a></div>
+      <div class="flist">${side.length?side.map(featItemHtml).join(""):`<p class="empty">아직 다른 글이 없습니다.</p>`}</div>
+    </div>
+  </div>
+
+  <div class="sec-head"><h2>Editor's Picks</h2><span>${usePick?"이번 주 꼭 볼 이슈":"많이 읽은 순"}</span></div>
+  ${(!usePick&&!USING_SAMPLE)?`<div class="banner" style="margin:-6px 0 16px">노션 DB에 <b>Pick</b> 체크박스 열을 만들고 체크하면 여기에 직접 고른 글이 표시됩니다.</div>`:""}
+  <div class="grid">${picks.map((p,i)=>cardHtml(p,i)).join("")}</div>
+
+  <div class="sec-head"><h2>주제별</h2><span>관심 주제로 모아보기</span></div>
+  ${tnames.length?`<div class="ttabs">${tnames.map(n=>
+      `<button type="button" class="ttab${n===first?" on":""}" data-topic="${n.replace(/"/g,"&quot;")}"
+        onclick="dashTopic(this.dataset.topic)">${n}<span class="tn">${map[n].length}</span></button>`).join("")}
+    <a class="ttab" id="dashTopicMore" href="#/topic/${encodeURIComponent(first)}" style="margin-left:auto;background:none">더보기 →</a></div>
+  <div class="grid" id="dashTopicGrid">${firstItems.map((p,i)=>cardHtml(p,i)).join("")}</div>`
+  :`<div class="banner">노션 DB에 <b>Topic</b> 열을 만들고 글마다 주제를 골라주시면 여기에 주제별로 나뉘어 표시됩니다.</div>`}`;
 }
 function viewWeeks(){
   const starts=[...new Set(POSTS.map(p=>deriveWeek(p.date).start))].sort((a,b)=>b.localeCompare(a));
@@ -745,7 +878,7 @@ function postSideHtml(p){
     <section class="spanel">
       <div class="sh"><h3>최신 뉴스트래킹</h3><span>최근 업데이트 순</span></div>
       <div class="slist">${latest.length?latest.map(x=>sideCardHtml(x)).join(""):`<div class="sempty">아직 다른 글이 없습니다.</div>`}</div>
-      <a class="smore" href="#/">전체 보기 →</a>
+      <a class="smore" href="#/latest">전체 보기 →</a>
     </section>
     <section class="spanel">
       <div class="sh"><h3>관련 이슈 더보기</h3>${topic?`<span>${topic}</span>`:""}</div>
@@ -784,14 +917,15 @@ function router(){
   const hash=location.hash||"#/";
   const [route,arg]=hash.replace(/^#\//,"").split("/");
   let html,active="home";
-  if(!route){html=viewHome();active="home";}
+  if(!route){html=viewDash();active="dash";}
+  else if(route==="latest"){html=viewHome();active="home";}
   else if(route==="weeks"){html=viewWeeks();active="weeks";}
   else if(route==="topics"){html=viewTopics();active="topics";}
   else if(route==="topic"){html=viewTopic(decodeURIComponent(arg||""));active="topics";}
   else if(route==="authors"){html=viewAuthors();active="authors";}
   else if(route==="author"){html=viewAuthor(decodeURIComponent(arg||""));active="authors";}
   else if(route==="post"){html=viewPost(arg);active="";}
-  else{html=viewHome();}
+  else{html=viewDash();active="dash";}
   $app.innerHTML=html;
   $app.classList.toggle("wide", route==="post");
   if(route==="post"){ const cur=POSTS.find(x=>String(x.id)===String(arg)); if(cur) countView(cur); }
