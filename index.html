@@ -259,6 +259,21 @@
   .post-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:18px;align-items:start}
   .post-main{min-width:0}
   .post-layout .article{margin-top:0;padding:28px 26px}
+
+  /* 기사 상단 대표 이미지 (제목 박스 위) — 16:7 비율로 가운데 크롭 */
+  .pcover{display:block;width:100%;aspect-ratio:16/7;overflow:hidden;border-radius:var(--radius);
+          border:1px solid var(--border);background:var(--bg-soft);box-shadow:var(--shadow);margin-bottom:14px}
+  .pcover img{width:100%;height:100%;object-fit:cover;display:block}
+  /* 카드 썸네일 — 16:9 비율로 가운데 크롭 */
+  .card .thumb{display:block;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:11px;
+               background:var(--bg-soft);border:1px solid var(--border);margin-bottom:12px}
+  .card .thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s ease}
+  .card:hover .thumb img{transform:scale(1.04)}
+  /* 본문 안 이미지 (두 번째 이후) */
+  .article .insight figure.ifig{margin:16px 0}
+  .article .insight figure.ifig img{width:100%;max-height:420px;object-fit:contain;display:block;
+                                    border:1px solid var(--border);border-radius:11px;background:var(--bg-soft)}
+  .article .insight figure.ifig figcaption{margin-top:7px;font-size:12.5px;color:var(--faint);text-align:center;line-height:1.6}
   .post-layout .article h1{font-size:24px}
   .post-layout .article p{font-size:15px}
   .post-side{position:sticky;top:82px;display:grid;grid-template-rows:1fr 1fr;gap:16px;min-width:0}
@@ -334,6 +349,7 @@ const SAMPLE = [
    summary:"리스테이킹 프로토콜의 총예치금(TVL)이 사상 최고치를 경신했다. 수익률 경쟁이 과열되며 담보 중복 사용에 따른 연쇄 청산 위험을 우려하는 목소리도 커지고 있다.",
    insight:"수익률만 보고 들어가기엔 슬래싱 리스크가 겹겹이 쌓인 구조. 예치금 규모보다 담보 재사용 배수를 봐야 진짜 리스크가 보인다.",source:"https://example.com/restaking"},
   {id:3,title:"美 스테이블코인 법안 상원 통과 — 발행 요건 대폭 강화",author:"배예림",week:2,tags:["규제동향"],date:"2026-07-16",
+   cover:"assets/og-image.png",
    summary:"미국 상원이 스테이블코인 규제 법안을 통과시켰다. 100% 준비금 보유와 정기 감사가 의무화되며 비은행 발행사의 진입 요건도 명확해졌다.",
    insight:"준비금 투명성이 법제화되면 신뢰도 높은 소수 발행사로 시장이 재편될 가능성. 알고리즘형 스테이블코인엔 사실상 사형선고에 가깝다.",source:"https://example.com/stablecoin-bill"},
   {id:4,title:"베이스(Base) 온체인 활성 지갑, 옵티미즘 추월",author:"장동현",week:1,tags:["프로젝트","L2"],date:"2026-07-11",
@@ -476,12 +492,24 @@ function cardTopicsHtml(p){
     `<a class="tag ${tagClass(t)} tlink" href="#/topic/${encodeURIComponent(t)}" onclick="event.stopPropagation()">${t}</a>`
   ).join("")}</span>`;
 }
+/* 대표 이미지 — 카드 썸네일 / 기사 상단 배너. 이미지가 없거나 깨지면 자동으로 사라집니다 */
+function thumbHtml(p){
+  if(!p.cover) return "";
+  return `<div class="thumb"><img src="${p.cover}" alt="" loading="lazy"
+    onerror="this.closest('.thumb').remove()"></div>`;
+}
+function coverHtml(p){
+  if(!p.cover) return "";
+  return `<div class="pcover"><img src="${p.cover}" alt="${(p.title||"").replace(/"/g,"&quot;")}"
+    onerror="this.closest('.pcover').remove()"></div>`;
+}
 function cardHtml(p, i){
   const delay = Math.min((i||0)*60, 480);
   const n=p.likes||0;
   const like=n>0?`<span class="clike${isLiked(p.pageId)?" on":""}">${HEART}${n}</span>`:"";
   return `<article class="card" style="animation-delay:${delay}ms" onclick="location.hash='#/post/${p.id}'">
-    ${tagsHtml(p.tags)}
+    ${thumbHtml(p)}
+${tagsHtml(p.tags)}
     <h3>${p.title}</h3>
     <p class="excerpt">${p.summary}</p>
     <div class="foot">${avatarHtml(p.author)}
@@ -644,6 +672,7 @@ function viewPost(id){
   return `<div class="back" onclick="history.length>1?history.back():location.hash='#/'">← 목록으로</div>
   <div class="post-layout">
     <div class="post-main">
+      ${coverHtml(p)}
       <article class="article">${tagsHtml(p.tags)}
         <h1 style="margin-top:12px">${p.title}</h1>
         <div class="abyline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span>

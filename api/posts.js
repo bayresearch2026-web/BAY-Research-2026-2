@@ -59,6 +59,15 @@ function readUrl(prop) {
   }
   return "";
 }
+// 주제 열은 이 이름들 중 먼저 발견되는 것을 씁니다 (대소문자 무시)
+const TOPIC_NAMES = ["Topic", "Topics", "주제", "Category", "카테고리", "분류"];
+function getTopicProp(props) {
+  for (const n of TOPIC_NAMES) {
+    const found = getProp(props, n);
+    if (found) return [n, found];
+  }
+  return [null, null];
+}
 // 주제(Topic) 열 읽기 — 선택/다중선택/텍스트 중 무엇으로 만들어도 동작합니다
 function readTopics(prop) {
   if (!prop) return [];
@@ -142,8 +151,37 @@ async function fetchChildren(blockId, token) {
   } while (cursor);
   return out;
 }
-// 뉴스 페이지 본문(블록)을 인사이트 HTML로 조립 — 문단·소제목·목록·인용·표(table)까지 지원
+// 노션 이미지 블록에서 실제 주소 꺼내기 (외부 링크 / 노션 업로드 모두 지원)
+// 주의: 노션 업로드 파일 주소는 약 1시간 후 만료됩니다. 이 함수는 요청할 때마다
+//       노션에서 새로 받아오므로(캐시 60초) 평소 사용에는 문제가 없습니다.
+function imageUrl(node) {
+  if (!node) return "";
+  return (node.external && node.external.url) || (node.file && node.file.url) || "";
+}
+// 페이지 표지(cover) 이미지
+function pageCoverUrl(page) {
+  const c = page && page.cover;
+  if (!c) return "";
+  return (c.external && c.external.url) || (c.file && c.file.url) || "";
+}
+// 파일&미디어 타입 속성(Image/Thumbnail/Cover 등)에서 이미지 꺼내기
+const IMAGE_PROP_NAMES = ["Image", "Thumbnail", "Cover", "이미지", "썸네일", "대표이미지"];
+function readImageProp(props) {
+  for (const n of IMAGE_PROP_NAMES) {
+    const prop = getProp(props, n);
+    if (prop && prop.files && prop.files[0]) {
+      const f = prop.files[0];
+      const u = (f.external && f.external.url) || (f.file && f.file.url) || "";
+      if (u) return u;
+    }
+  }
+  return "";
+}
+
+// 뉴스 페이지 본문(블록)을 인사이트 HTML로 조립 — 문단·소제목·목록·인용·표(table)·이미지 지원
+// 반환: { html, images } — images[0]은 대표 이미지(썸네일/상단 배너)로 씁니다
 async function readInsightBody(pageId, token) {
+  const images = [];
   try {
     const blocks = await fetchChildren(pageId, token);
     let html = "", listBuf = "", listTag = "";
@@ -177,6 +215,18 @@ async function readInsightBody(pageId, token) {
       else if (t === "to_do") { const x = rtHtml(node.rich_text); html += `<p>${node.checked ? "☑" : "☐"} ${x}</p>`; }
       else if (t === "code") { const x = rtHtml(node.rich_text); html += `<pre>${x}</pre>`; }
       else if (t === "divider") { olNext = 1; html += "<hr>"; }
+      else if (t === "image") {
+        const u = imageUrl(node);
+        if (u) {
+          const capTxt = (node.caption || []).map((c) => c.plain_text).join("").trim();
+          images.push(u);
+          // 첫 이미지는 기사 상단 배너로 올라가므로 본문에서는 뺍니다
+          if (images.length > 1) {
+            html += `<figure class="ifig"><img src="${esc(u)}" alt="${esc(capTxt)}" loading="lazy">` +
+                    (capTxt ? `<figcaption>${rtHtml(node.caption)}</figcaption>` : "") + `</figure>`;
+          }
+        }
+      }
       else if (t === "table") {
         const rows = await fetchChildren(b.id, token);
         const hasHeader = node.has_column_header;
@@ -191,9 +241,9 @@ async function readInsightBody(pageId, token) {
       else { const x = rtHtml(node.rich_text); if (x.trim()) html += `<p>${x}</p>`; }
     }
     flush();
-    return html;
+    return { html, images };
   } catch (e) {
-    return "";
+    return { html: "", images };
   }
 }
 
@@ -259,13 +309,17 @@ export default async function handler(req, res) {
         const status = readStatus(getProp(p, "Status"));
         // 인사이트: Insight 속성에 글이 있으면 그 텍스트를 HTML 문단으로, 없으면 페이지 본문(표 포함)을 HTML로
         const insightProp = readText(getProp(p, "Insight"));
-        let insight = "", insightMd = "";
+        let insight = "", insightMd = "", bodyImages = [];
         if (meaningfulInsight(insightProp)) {
           // 속성에 적힌 글은 마크다운 원문 그대로 넘기고, 화면에서 marked.js가 해석합니다
           insightMd = insightProp;
         } else {
-          insight = await readInsightBody(page.id, token);
+          const body = await readInsightBody(page.id, token);
+          insight = body.html;
+          bodyImages = body.images;
         }
+        // 대표 이미지: 본문 첫 이미지 → 페이지 표지 → Image/썸네일 속성 순
+        const cover = bodyImages[0] || pageCoverUrl(page) || readImageProp(p) || "";
         const dateProp = getProp(p, "Date of Issue");
         const sourceProp = getProp(p, "Source");
         const tagProp = getProp(p, "Tag");
@@ -280,10 +334,11 @@ export default async function handler(req, res) {
           summary: readText(getProp(p, "Content Summary")),
           insight,
           insightMd,
+          cover,                                             // 상단 배너 / 카드 썸네일용 대표 이미지
           source: readUrl(sourceProp),
           date: (dateProp && dateProp.date && dateProp.date.start) || "",
           tags: tagProp && tagProp.multi_select ? tagProp.multi_select.map((t) => t.name) : [],
-          topics: readTopics(getProp(p, "Topic")),
+          topics: readTopics(getTopicProp(p)[1]),
         };
       })
     );
@@ -291,15 +346,23 @@ export default async function handler(req, res) {
     // 진단 모드: 원본 개수/상태값 확인
     if (debug) {
       const first = results[0] && results[0].properties ? results[0].properties : null;
+      const [topicName, topicProp] = first ? getTopicProp(first) : [null, null];
       res.status(200).json({
         raw_count: results.length,
         published_count: posts.filter((x) => x.title && PUBLISH_STATUS.includes(normStatus(x.status))).length,
+        주제열_찾음: !!topicName,
+        주제열_이름: topicName,
+        주제열_타입: topicProp ? topicProp.type : null,
+        주제열에서_읽은값: readTopics(topicProp),
+        주제_있는_글수: posts.filter((x) => (x.topics || []).length).length,
+        대표이미지_있는_글수: posts.filter((x) => x.cover).length,
+        대표이미지_예시: (posts.find((x) => x.cover) || {}).cover || null,
+        찾아본_이름들: TOPIC_NAMES,
         first_row: first
           ? {
               title: readText(getProp(first, "Title")),
               status: readStatus(getProp(first, "Status")),
               status_norm: normStatus(readStatus(getProp(first, "Status"))),
-              status_raw: getProp(first, "Status"),
               property_names: Object.keys(first),
             }
           : null,
