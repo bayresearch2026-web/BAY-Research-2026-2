@@ -429,12 +429,42 @@
 
     /* 주제 탭 살짝 떠오름 */
     .ttab:hover{transform:translateY(-1px)}
+
+    /* --- 3) 스포트라이트: 마우스를 따라 카드에 빛이 번집니다 --- */
+    .card,.topic-card,.author-card{position:relative;overflow:hidden}
+    /* 카드 안쪽 은은한 빛 */
+    .card::before,.topic-card::before,.author-card::before{
+      content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .3s;
+      background:radial-gradient(240px circle at var(--mx,50%) var(--my,50%),rgba(11,92,255,.11),transparent 62%)}
+    .card:hover::before,.topic-card:hover::before,.author-card:hover::before{opacity:1}
+    /* 테두리도 마우스 쪽만 밝아지도록 */
+    .card::after,.topic-card::after,.author-card::after{
+      content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .3s;
+      border-radius:inherit;padding:1px;
+      background:radial-gradient(340px circle at var(--mx,50%) var(--my,50%),rgba(11,92,255,.55),transparent 45%);
+      -webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);
+      -webkit-mask-composite:xor;mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);
+      mask-composite:exclude}
+    .card:hover::after,.topic-card:hover::after,.author-card:hover::after{opacity:1}
+    /* 카드 내용이 빛 위에 오도록 */
+    .card>*,.topic-card>*,.author-card>*{position:relative;z-index:1}
+    /* 점선 테두리의 "미분류" 카드는 빛 효과 제외 */
+    .topic-card.muted::before,.topic-card.muted::after{display:none}
   }
+
+  /* --- 4) 클릭 파편 --- */
+  #spark{position:fixed;inset:0;z-index:9998;pointer-events:none;overflow:hidden}
+  #spark i{position:absolute;display:block;width:7px;height:7px;border-radius:2px;
+    background:linear-gradient(150deg,#5fbcff,#1f74ff 55%,#0a3ecc);
+    box-shadow:0 0 8px rgba(46,166,255,.55);will-change:transform,opacity}
 
   /* 애니메이션 최소화 설정을 켠 사용자는 움직임 없이 */
   @media (prefers-reduced-motion:reduce){
     .card:hover,.topic-card:hover,.author-card:hover{transform:none!important}
-    .nav .links a::after,.card .foot::after{transition:none!important}
+    .nav .links a::after{transition:none!important}
+    .card::before,.card::after,.topic-card::before,.topic-card::after,
+    .author-card::before,.author-card::after{display:none!important}
+    #spark{display:none}
   }
 </style>
 </head>
@@ -1009,6 +1039,65 @@ function loadData(){
   });
 }
 loadData();
+
+/* =========================================================================
+   커서 인터랙션 — 스포트라이트 + 클릭 파편
+   마우스가 있는 기기에서만 동작하고, "동작 줄이기" 설정을 켠 분은 자동 제외됩니다.
+   카드는 화면을 바꿀 때마다 다시 그려지므로, 개별 카드가 아니라
+   document에 한 번만 이벤트를 걸어두는 방식(이벤트 위임)을 씁니다.
+   ========================================================================= */
+(function(){
+  const canHover = window.matchMedia && matchMedia("(hover:hover) and (pointer:fine)").matches;
+  const lessMotion = window.matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches;
+  if(!canHover || lessMotion) return;
+
+  /* --- 1) 스포트라이트: 카드 위 마우스 위치를 CSS 변수로 넘겨줍니다 --- */
+  const SPOT = ".card,.topic-card,.author-card";
+  let pending=null, queued=false;
+  document.addEventListener("mousemove", e=>{
+    const el = e.target.closest && e.target.closest(SPOT);
+    if(!el) return;
+    pending = { el, x:e.clientX, y:e.clientY };
+    if(queued) return;                 // 한 프레임에 한 번만 계산합니다
+    queued = true;
+    requestAnimationFrame(()=>{
+      queued = false;
+      if(!pending) return;
+      const r = pending.el.getBoundingClientRect();
+      pending.el.style.setProperty("--mx", (pending.x - r.left) + "px");
+      pending.el.style.setProperty("--my", (pending.y - r.top) + "px");
+      pending = null;
+    });
+  }, {passive:true});
+
+  /* --- 2) 클릭 파편: 누른 자리에서 크리스탈 조각이 튀어나옵니다 --- */
+  const layer = document.createElement("div");
+  layer.id = "spark";
+  document.body.appendChild(layer);
+
+  document.addEventListener("pointerdown", e=>{
+    if(e.button !== 0) return;                       // 왼쪽 버튼만
+    const strong = !!(e.target.closest && e.target.closest("a,button,.card,.topic-card,.author-card,.scard,.fitem,.ttab,.tag.tlink,.back,.likebtn"));
+    const n = strong ? 12 : 6;                       // 클릭 가능한 곳은 더 화려하게
+    for(let i=0;i<n;i++){
+      const bit = document.createElement("i");
+      const size = 4 + Math.random()*5;
+      bit.style.width = bit.style.height = size.toFixed(1)+"px";
+      bit.style.left = (e.clientX - size/2)+"px";
+      bit.style.top  = (e.clientY - size/2)+"px";
+      layer.appendChild(bit);
+
+      const ang  = (Math.PI*2*i)/n + (Math.random()-.5)*0.7;
+      const dist = (strong?34:22) + Math.random()*(strong?46:26);
+      const dur  = 420 + Math.random()*320;
+      const anim = bit.animate([
+        { transform:"translate(0,0) rotate(0deg) scale(1)", opacity:1 },
+        { transform:`translate(${Math.cos(ang)*dist}px, ${Math.sin(ang)*dist + 14}px) rotate(${(Math.random()*300-150).toFixed(0)}deg) scale(.25)`, opacity:0 }
+      ], { duration:dur, easing:"cubic-bezier(.15,.7,.3,1)", fill:"forwards" });
+      anim.onfinish = ()=> bit.remove();
+    }
+  }, {passive:true});
+})();
 </script>
 </body>
 </html>

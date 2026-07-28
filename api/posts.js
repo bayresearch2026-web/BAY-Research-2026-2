@@ -206,8 +206,17 @@ function imageUrl(node) {
     (node.external && node.external.url) ||
     (node.file && node.file.url) ||
     (node.file_upload && node.file_upload.url) ||   // 새 업로드 방식
+    node.url ||                                      // embed 블록
     ""
   );
+}
+// 파일/임베드 블록이 실제로 그림인지 확인 (확장자 또는 노션 파일 저장소 주소)
+function looksLikeImageUrl(u) {
+  const s = String(u || "").split("?")[0].toLowerCase();
+  return /\.(png|jpe?g|gif|webp|avif|svg|bmp)$/.test(s) ||
+         s.indexOf("prod-files-secure") !== -1 ||
+         s.indexOf("notion.so/image") !== -1 ||
+         s.indexOf("notion-static.com") !== -1;
 }
 // 페이지 표지(cover) 이미지
 function pageCoverUrl(page) {
@@ -336,9 +345,10 @@ async function readInsightBody(pageId, token) {
       else if (t === "to_do") { const x = rtHtml(node.rich_text); html += `<p>${node.checked ? "☑" : "☐"} ${x}</p>`; }
       else if (t === "code") { const x = rtHtml(node.rich_text); html += `<pre>${x}</pre>`; }
       else if (t === "divider") { olNext = 1; html += "<hr>"; }
-      else if (t === "image") {
+      // image 블록뿐 아니라, 이미지를 파일로 첨부(file)하거나 링크로 삽입(embed)한 경우도 받아줍니다
+      else if (t === "image" || t === "file" || t === "embed") {
         const u = imageUrl(node);
-        if (u) {
+        if (u && (t === "image" || looksLikeImageUrl(u))) {
           // 노션 캡션이 있으면 그대로 출처로 쓰고, 없으면 다음 문단이 출처인지 살펴봅니다
           const capTxt = (node.caption || []).map((c) => c.plain_text).join("").trim();
           pendingImg = { url: u, capTxt, capHtml: capTxt ? rtHtml(node.caption) : "" };
@@ -477,6 +487,44 @@ export default async function handler(req, res) {
           topics: readTopics(getTopicProp(p)[1]),
         };
       }));
+
+    // 진단 모드 ②: 특정 글 하나만 자세히 —  /api/posts?debug=1&q=칼시
+    // 그 글의 노션 블록을 순서대로 늘어놓고, 이미지가 어떤 형태로 들어있는지 보여줍니다.
+    const q = (req.query && (req.query.q || req.query.title)) || "";
+    if (debug && q) {
+      const hit = results.find((r) =>
+        readText(getProp(r.properties || {}, "Title")).indexOf(String(q)) !== -1);
+      if (!hit) {
+        res.status(200).json({ 찾음: false, 검색어: q });
+        return;
+      }
+      const blocks = await flattenBlocks(hit.id, token);
+      const body = await readInsightBody(hit.id, token);
+      const post = posts.find((x) => x.pageId === hit.id) || {};
+      res.status(200).json({
+        찾음: true,
+        제목: readText(getProp(hit.properties, "Title")),
+        블록수: blocks.length,
+        블록목록: blocks.slice(0, 40).map((b) => {
+          const t = b.type, n = b[t] || {};
+          const o = { 타입: t, 자식있음: !!b.has_children };
+          if (t === "image" || t === "file" || t === "embed") {
+            o.이미지형태 = n.type || (n.external ? "external" : n.file ? "file" : "?");
+            o.주소 = String(imageUrl(n)).slice(0, 120) || "(주소 없음)";
+            o.그림으로_인정 = t === "image" || looksLikeImageUrl(imageUrl(n));
+          } else {
+            o.글 = (n.rich_text || []).map((x) => x.plain_text).join("").slice(0, 40);
+          }
+          return o;
+        }),
+        찾은_이미지수: body.images.length,
+        맨앞이_이미지: body.leadIsTop,
+        대표이미지: post.cover || "(없음)",
+        대표이미지가_본문에도_나옴: !!post.coverInBody,
+        Insight속성_사용: !!post.insightMd,
+      });
+      return;
+    }
 
     // 진단 모드: 원본 개수/상태값 확인
     if (debug) {
