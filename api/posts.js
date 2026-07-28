@@ -218,12 +218,14 @@ async function readInsightBody(pageId, token) {
       else if (t === "image") {
         const u = imageUrl(node);
         if (u) {
+          // 노션에서 이미지 밑에 적은 캡션을 그대로 출처 표기로 씁니다
           const capTxt = (node.caption || []).map((c) => c.plain_text).join("").trim();
-          images.push(u);
+          const capHtml = capTxt ? rtHtml(node.caption) : "";
+          images.push({ url: u, capTxt, capHtml });
           // 첫 이미지는 기사 상단 배너로 올라가므로 본문에서는 뺍니다
           if (images.length > 1) {
             html += `<figure class="ifig"><img src="${esc(u)}" alt="${esc(capTxt)}" loading="lazy">` +
-                    (capTxt ? `<figcaption>${rtHtml(node.caption)}</figcaption>` : "") + `</figure>`;
+                    (capHtml ? `<figcaption>${capHtml}</figcaption>` : "") + `</figure>`;
           }
         }
       }
@@ -319,7 +321,10 @@ export default async function handler(req, res) {
           bodyImages = body.images;
         }
         // 대표 이미지: 본문 첫 이미지 → 페이지 표지 → Image/썸네일 속성 순
-        const cover = bodyImages[0] || pageCoverUrl(page) || readImageProp(p) || "";
+        const first = bodyImages[0] || null;
+        const cover = (first && first.url) || pageCoverUrl(page) || readImageProp(p) || "";
+        // 이미지 출처 = 노션에서 그 이미지 밑에 적은 캡션
+        const coverCaption = (first && first.capHtml) || "";
         const dateProp = getProp(p, "Date of Issue");
         const sourceProp = getProp(p, "Source");
         const tagProp = getProp(p, "Tag");
@@ -337,6 +342,7 @@ export default async function handler(req, res) {
           insight,
           insightMd,
           cover,                                             // 상단 배너 / 카드 썸네일용 대표 이미지
+          coverCaption,                                      // 이미지 출처 (노션 캡션)
           source: readUrl(sourceProp),
           date: (dateProp && dateProp.date && dateProp.date.start) || "",
           tags: tagProp && tagProp.multi_select ? tagProp.multi_select.map((t) => t.name) : [],

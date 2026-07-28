@@ -242,14 +242,14 @@
   .card .foot .ctopics{display:flex;align-items:center;gap:5px;min-width:0;margin-left:auto;padding-left:8px;overflow:hidden}
   .card .foot .ctopics .tag{font-size:10.5px;padding:2px 8px;white-space:nowrap;max-width:112px;overflow:hidden;text-overflow:ellipsis}
   /* 좋아요는 같은 줄 맨 오른쪽(주제 배지 뒤) */
-  /* 조회수 */
-  .card .foot .cview{display:inline-flex;align-items:center;gap:4px;margin-left:auto;padding-left:6px;color:var(--faint);font-weight:700;white-space:nowrap}
-  .card .foot .cview svg{width:13px;height:13px;flex:none;opacity:.75}
-  .card .foot .cview + .clike{margin-left:0;padding-left:8px}
-  .card .foot .ctopics + .cview{margin-left:0;padding-left:8px}
-  .article .abyline .aview{display:inline-flex;align-items:center;gap:5px;color:var(--faint);font-weight:600;white-space:nowrap}
-  .article .abyline .aview svg{width:14px;height:14px;flex:none;opacity:.8}
-  .article .abyline .aview b{font-weight:700;color:var(--muted)}
+  /* 조회수 — 기사 제목 옆 */
+  .article .ptitle{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-top:12px}
+  .article .ptitle h1{margin-bottom:0;flex:1 1 auto;min-width:0}
+  .article .ptitle .aview{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;padding-bottom:4px;
+                          color:var(--faint);font-size:13px;font-weight:600;white-space:nowrap}
+  .article .ptitle .aview svg{width:14px;height:14px;flex:none;opacity:.8}
+  .article .ptitle .aview b{font-weight:700;color:var(--muted)}
+  @media(max-width:640px){.article .ptitle{flex-direction:column;align-items:flex-start;gap:8px}}
   .card .foot .clike{display:inline-flex;align-items:center;gap:4px;margin-left:auto;padding-left:6px;color:var(--faint);font-weight:700;white-space:nowrap}
   .card .foot .ctopics + .clike{margin-left:0;padding-left:8px}
   .card .foot .clike svg{width:13px;height:13px;flex:none}
@@ -275,10 +275,26 @@
   .post-layout .article .abyline{padding-bottom:20px;margin-bottom:6px;border-bottom:1px solid var(--border)}
   .post-layout .article .insight{background:none;border:none;padding:0;margin-top:2px}
   .post-layout .article .insight pre,.post-layout .article .insight table{background:var(--bg-soft)}
+  /* 상세 페이지 본문 글자 키우기 (요약·인사이트) */
+  .post-layout .article p.psum{font-size:17.5px;line-height:1.85}
+  .post-layout .article .insight p{font-size:17px;line-height:1.85}
+  .post-layout .article .insight li{font-size:17px;line-height:1.85}
+  .post-layout .article .insight blockquote{font-size:16.5px;line-height:1.8}
+  .post-layout .article h4{font-size:13px}
+  .post-layout .article .insight h1,.post-layout .article .insight h2,
+  .post-layout .article .insight h3.ih1{font-size:21px}
+  .post-layout .article .insight h3,.post-layout .article .insight h4.ih2{font-size:18.5px}
+  .post-layout .article .insight h4,.post-layout .article .insight h5,
+  .post-layout .article .insight h6,.post-layout .article .insight h5.ih3{font-size:16px}
+  .post-layout .article .insight table{font-size:15px}
 
   /* 기사 상단 대표 이미지 (제목 박스 위) — 2:1 프레임 */
   .pcover{position:relative;display:block;width:100%;aspect-ratio:2/1;overflow:hidden;border-radius:var(--radius);
-          border:1px solid var(--border);background:#fff;box-shadow:var(--shadow);margin-bottom:14px}
+          border:1px solid var(--border);background:#fff;box-shadow:var(--shadow)}
+  .pcwrap{margin:0 0 16px}
+  /* 이미지 출처 (노션 캡션) */
+  .pccap{margin-top:8px;padding:0 2px;font-size:12.5px;line-height:1.6;color:var(--faint);text-align:right}
+  .pccap a{color:var(--muted);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
   .pcover img{position:relative;z-index:1;width:100%;height:100%;object-fit:cover;display:block}
   /* 카드 썸네일 — 16:9 프레임 */
   .card .thumb{position:relative;display:block;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:11px;
@@ -573,20 +589,24 @@ function thumbHtml(p){
 }
 function coverHtml(p){
   if(!p.cover) return "";
-  return `<div class="pcover" data-fr="2"><img src="${p.cover}" alt="${(p.title||"").replace(/"/g,"&quot;")}"
-    onload="fitCover(this)" onerror="this.closest('.pcover').remove()"></div>`;
+  // 이미지 출처 = 노션에서 그 이미지 밑에 적어둔 캡션 (없으면 표시 안 함)
+  const cap = (p.coverCaption||"").trim();
+  return `<figure class="pcwrap">
+    <div class="pcover" data-fr="2"><img src="${p.cover}" alt="${(p.title||"").replace(/"/g,"&quot;")}"
+      onload="fitCover(this)" onerror="this.closest('.pcwrap').remove()"></div>
+    ${cap?`<figcaption class="pccap">${cap}</figcaption>`:""}
+  </figure>`;
 }
 function cardHtml(p, i){
   const delay = Math.min((i||0)*60, 480);
   const n=p.likes||0;
   const like=n>0?`<span class="clike${isLiked(p.pageId)?" on":""}">${HEART}${n}</span>`:"";
-  const view=(p.views||0)>0?`<span class="cview">${EYE}${fmtCount(p.views)}</span>`:"";
   return `<article class="card" style="animation-delay:${delay}ms" onclick="location.hash='#/post/${p.id}'">
     ${thumbHtml(p)}
 ${tagsHtml(p.tags)}
     <h3>${p.title}</h3>
     <div class="foot">${avatarHtml(p.author)}
-      <span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span>${cardTopicsHtml(p)}${view}${like}</div>
+      <span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span>${cardTopicsHtml(p)}${like}</div>
   </article>`;
 }
 
@@ -747,10 +767,12 @@ function viewPost(id){
     <div class="post-main">
       ${coverHtml(p)}
       <article class="article">${tagsHtml(p.tags)}
-        <h1 style="margin-top:12px">${p.title}</h1>
-        <div class="abyline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span>
+        <div class="ptitle">
+          <h1>${p.title}</h1>
           <span class="aview">${EYE}읽음 <b id="viewCount">${fmtCount(p.views)}</b></span>
-          ${(p.topics||[]).filter(Boolean).map(t=>`<a class="tag ${tagClass(t)} tlink" href="#/topic/${encodeURIComponent(t)}">${t}</a>`).join("")}</div>
+        </div>
+        <div class="abyline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span>
+${(p.topics||[]).filter(Boolean).map(t=>`<a class="tag ${tagClass(t)} tlink" href="#/topic/${encodeURIComponent(t)}">${t}</a>`).join("")}</div>
         <h4>요약</h4><p class="psum">${fmtSummary(p.summary)}</p>
         <h4>인사이트</h4><div class="insight">${insightHtml(p)}</div>
         ${src}
