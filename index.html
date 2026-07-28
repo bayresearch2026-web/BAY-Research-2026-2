@@ -729,10 +729,10 @@ function viewHome(){
 }
 
 /* ---- 홈(대시보드) ----
-   1) 큰 기사 1건 + 오른쪽 최신 4건  2) Editor's Picks 3건  3) 주제별 탭 */
+   1) 큰 기사 1건 + 오른쪽 최신 4건  2) Editor's Picks 6건  3) 주제별 탭 */
 const DASH_SIDE_N = 4;   // 오른쪽 최신 목록 개수
-const DASH_PICK_N = 3;   // Editor's Picks 개수
-const DASH_TOPIC_N = 3;  // 주제 탭마다 보여줄 기사 수
+const DASH_PICK_N = 6;   // Editor's Picks 개수 (3개씩 두 줄)
+const DASH_TOPIC_N = 6;  // 주제 탭마다 보여줄 기사 수 (3개씩 두 줄)
 
 function featMainHtml(p){
   const cover = p.cover
@@ -756,7 +756,7 @@ function featItemHtml(p){
     <div class="fmeta">${p.author||""}${p.date?` · ${fmtDate(p.date)}`:""}</div>
   </a>`;
 }
-/* 주제 탭을 누르면 아래 기사 3개만 바꿔 그립니다 */
+/* 주제 탭을 누르면 아래 기사 6개(3개씩 두 줄)만 바꿔 그립니다 */
 function dashTopic(name){
   const grid=document.getElementById("dashTopicGrid");
   if(!grid) return;
@@ -800,7 +800,7 @@ function viewDash(){
     </div>
   </div>
 
-  <div class="sec-head"><h2>Editor's Picks</h2><span>${usePick?"이번 주 꼭 볼 이슈":"많이 읽은 순"}</span></div>
+  <div class="sec-head"><h2>Editor's Picks</h2><span>${usePick?"이번주 꼭 봐야할 이슈":"많이 읽은 순"}</span></div>
   ${(!usePick&&!USING_SAMPLE)?`<div class="banner" style="margin:-6px 0 16px">노션 DB에 <b>Pick</b> 체크박스 열을 만들고 체크하면 여기에 직접 고른 글이 표시됩니다.</div>`:""}
   <div class="grid">${picks.map((p,i)=>cardHtml(p,i)).join("")}</div>
 
