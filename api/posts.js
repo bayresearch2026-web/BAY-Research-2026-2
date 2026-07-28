@@ -180,11 +180,26 @@ function readImageProp(props) {
 
 // 뉴스 페이지 본문(블록)을 인사이트 HTML로 조립 — 문단·소제목·목록·인용·표(table)·이미지 지원
 // 반환: { html, images } — images[0]은 대표 이미지(썸네일/상단 배너)로 씁니다
+// "출처: 블록미디어" 처럼 이미지 바로 아래에 적은 출처 줄을 알아봅니다.
+// 노션 캡션으로 달아도 되고, 그냥 문단으로 적어도 출처로 인식합니다.
+const SRC_WORD = "(?:이미지\\s*출처|사진\\s*출처|자료\\s*출처|출처|사진|자료|source|photo|credit|image)";
+const SOURCE_RE = new RegExp("^\\s*" + SRC_WORD + "\\s*[:：\\-–·]\\s*\\S", "i");        // "출처: 블록미디어"
+const SOURCE_LOOSE_RE = new RegExp("^\\s*" + SRC_WORD + "\\s+\\S", "i");                 // "출처 블록미디어"
+function looksLikeSource(txt) {
+  const t = (txt || "").trim();
+  if (!t || t.length > 80) return false;
+  if (SOURCE_RE.test(t)) return true;
+  // 구분기호 없이 띄어쓰기만 있는 경우는 짧은 줄일 때만 출처로 봅니다
+  // (그래야 "출처를 밝히지 않은 이번 보도는…" 같은 본문 문장이 잘못 걸리지 않습니다)
+  return t.length <= 30 && SOURCE_LOOSE_RE.test(t);
+}
+
 async function readInsightBody(pageId, token) {
   const images = [];
   try {
     const blocks = await fetchChildren(pageId, token);
     let html = "", listBuf = "", listTag = "";
+    let pendingImg = null;   // 다음 블록이 출처 줄인지 보려고 이미지를 잠깐 들고 있습니다
     // 번호 목록이 문단 때문에 끊겨도 1로 되돌아가지 않도록 번호를 이어서 셉니다
     let olNext = 1, olStart = 1;
     const flush = () => {
@@ -192,8 +207,30 @@ async function readInsightBody(pageId, token) {
       html += listTag === "ol" ? `<ol start="${olStart}">${listBuf}</ol>` : `<ul>${listBuf}</ul>`;
       listBuf = ""; listTag = "";
     };
+    // 들고 있던 이미지를 실제로 내보냅니다 (첫 이미지는 상단 배너로 가므로 본문에서 제외)
+    const flushImage = () => {
+      if (!pendingImg) return;
+      const im = pendingImg;
+      pendingImg = null;
+      images.push(im);
+      if (images.length > 1) {
+        flush();
+        html += `<figure class="ifig"><img src="${esc(im.url)}" alt="${esc(im.capTxt)}" loading="lazy">` +
+                (im.capHtml ? `<figcaption>${im.capHtml}</figcaption>` : "") + `</figure>`;
+      }
+    };
     for (const b of blocks) {
       const t = b.type, node = b[t] || {};
+      // 이미지 바로 다음 문단이 "출처: ..." 형태면 본문에 넣지 않고 그 이미지의 출처로 씁니다
+      if (pendingImg && (t === "paragraph" || t === "callout" || t === "quote")) {
+        const txt = (node.rich_text || []).map((x) => x.plain_text).join("").trim();
+        if (looksLikeSource(txt)) {
+          pendingImg.capTxt = txt;
+          pendingImg.capHtml = rtHtml(node.rich_text);
+          continue;
+        }
+      }
+      flushImage();
       if (t === "bulleted_list_item" || t === "numbered_list_item") {
         const tag = t === "bulleted_list_item" ? "ul" : "ol";
         if (listTag && listTag !== tag) flush();
@@ -218,15 +255,9 @@ async function readInsightBody(pageId, token) {
       else if (t === "image") {
         const u = imageUrl(node);
         if (u) {
-          // 노션에서 이미지 밑에 적은 캡션을 그대로 출처 표기로 씁니다
+          // 노션 캡션이 있으면 그대로 출처로 쓰고, 없으면 다음 문단이 출처인지 살펴봅니다
           const capTxt = (node.caption || []).map((c) => c.plain_text).join("").trim();
-          const capHtml = capTxt ? rtHtml(node.caption) : "";
-          images.push({ url: u, capTxt, capHtml });
-          // 첫 이미지는 기사 상단 배너로 올라가므로 본문에서는 뺍니다
-          if (images.length > 1) {
-            html += `<figure class="ifig"><img src="${esc(u)}" alt="${esc(capTxt)}" loading="lazy">` +
-                    (capHtml ? `<figcaption>${capHtml}</figcaption>` : "") + `</figure>`;
-          }
+          pendingImg = { url: u, capTxt, capHtml: capTxt ? rtHtml(node.caption) : "" };
         }
       }
       else if (t === "table") {
@@ -242,6 +273,7 @@ async function readInsightBody(pageId, token) {
       }
       else { const x = rtHtml(node.rich_text); if (x.trim()) html += `<p>${x}</p>`; }
     }
+    flushImage();
     flush();
     return { html, images };
   } catch (e) {
