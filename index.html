@@ -254,21 +254,26 @@
   .banner{background:var(--amber-soft);border:1px solid rgba(209,129,15,.3);color:var(--amber);font-size:13px;font-weight:600;padding:11px 16px;border-radius:11px;margin-top:18px}
 
   /* ---------- 상세 페이지 2/3 + 1/3 레이아웃 ---------- */
-  #app.wide{max-width:1280px}
-  .post-layout{display:grid;grid-template-columns:2fr 1fr;gap:22px;align-items:start}
+  /* 헤더(BAY 리서치팀)와 좌우 폭을 정확히 맞춤 — 별도 확장 없음 */
+  #app.wide{max-width:var(--maxw)}
+  .post-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:18px;align-items:start}
   .post-main{min-width:0}
-  .post-layout .article{margin-top:0}
+  .post-layout .article{margin-top:0;padding:28px 26px}
+  .post-layout .article h1{font-size:24px}
+  .post-layout .article p{font-size:15px}
   .post-side{position:sticky;top:82px;display:grid;grid-template-rows:1fr 1fr;gap:16px;min-width:0}
-  .spanel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 16px 14px;box-shadow:var(--shadow);
+  .spanel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:15px 14px 13px;box-shadow:var(--shadow);
           display:flex;flex-direction:column;min-height:0}
   .spanel .sh{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)}
   .spanel .sh h3{font-size:12.5px;font-weight:900;color:var(--accent);letter-spacing:.05em;text-transform:uppercase}
-  .spanel .sh span{font-size:11.5px;color:var(--faint);font-weight:600;margin-left:auto;white-space:nowrap}
+  .spanel .sh h3{font-size:12px;letter-spacing:.04em}
+  .spanel .sh span{font-size:11px;color:var(--faint);font-weight:600;margin-left:auto;white-space:nowrap;
+                   overflow:hidden;text-overflow:ellipsis;max-width:44%}
   .spanel .slist{display:flex;flex-direction:column;gap:4px}
-  .scard{display:block;padding:9px 10px;border-radius:10px;cursor:pointer;transition:.15s;border:1px solid transparent;min-width:0}
+  .scard{display:block;padding:8px 9px;border-radius:10px;cursor:pointer;transition:.15s;border:1px solid transparent;min-width:0}
   .scard:hover{background:var(--bg-soft);border-color:var(--border)}
   .scard.cur{background:var(--accent-soft);border-color:rgba(11,92,255,.18)}
-  .scard .st{font-size:13.5px;font-weight:700;line-height:1.45;letter-spacing:-.01em;color:var(--text);
+  .scard .st{font-size:13px;font-weight:700;line-height:1.45;letter-spacing:-.015em;color:var(--text);
              display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .scard:hover .st{color:var(--accent)}
   .scard .sm{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:11.5px;color:var(--faint);font-weight:600;min-width:0}
