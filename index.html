@@ -145,15 +145,16 @@
            display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   .card:hover h3{color:var(--accent)}
   .card .excerpt{color:var(--muted);font-size:13.5px;line-height:1.65;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-  /* 한 줄 유지 — 작성자 이름이 두 줄로 쪼개지지 않게 합니다 */
-  .card .foot{display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:6px;font-size:13px;color:var(--faint);
-    flex-wrap:nowrap;white-space:nowrap;min-width:0;overflow:hidden}
+  /* 작성자 이름·날짜는 한 덩어리로 묶여 절대 쪼개지지 않고,
+     주제 배지는 자리가 모자라면 통째로 아랫줄로 내려갑니다(글자 잘림 없음) */
+  .card .foot{display:flex;align-items:center;flex-wrap:wrap;gap:7px 6px;margin-top:auto;padding-top:6px;
+    font-size:13px;color:var(--faint);min-width:0}
   .avatar{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));
     display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;position:relative;overflow:hidden;flex:0 0 auto}
   .avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
-  /* 이름·날짜는 절대 줄어들지 않고, 공간이 모자라면 주제 배지가 먼저 줄어듭니다 */
-  .card .foot .who{color:var(--muted);font-weight:700;flex:0 0 auto;white-space:nowrap}
-  .card .foot > span:not(.who):not(.ctopics):not(.clike){flex:0 0 auto;white-space:nowrap}
+  .card .foot .byline,.feat-body .foot .byline{display:inline-flex;align-items:center;gap:6px;
+    white-space:nowrap;flex:0 0 auto;min-width:0}
+  .card .foot .who,.feat-body .foot .who{color:var(--muted);font-weight:700;white-space:nowrap}
 
   .week-block{margin-bottom:34px}
   .week-tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:6px 13px;border-radius:9px;margin-bottom:14px}
@@ -248,8 +249,10 @@
   .likebar .lhint{font-size:13px;color:var(--faint)}
   .likebar .lhint.err{color:var(--like);font-weight:700;max-width:520px;line-height:1.5;word-break:break-word}
   /* 주제 배지는 카드 오른쪽 아래(작성자·날짜 줄 끝)에 붙습니다 */
-  .card .foot .ctopics{display:flex;align-items:center;gap:5px;min-width:0;margin-left:auto;padding-left:6px;overflow:hidden;flex:0 1 auto}
-  .card .foot .ctopics .tag{font-size:10.5px;padding:2px 8px;white-space:nowrap;max-width:118px;overflow:hidden;text-overflow:ellipsis}
+  /* 주제 배지: 글자를 자르지 않고, 안 들어가면 줄바꿈해서 전부 보여줍니다 */
+  .card .foot .ctopics,.feat-body .foot .ctopics{display:flex;align-items:center;flex-wrap:wrap;gap:5px;
+    min-width:0;margin-left:auto;padding-left:6px;justify-content:flex-end;flex:0 1 auto}
+  .card .foot .ctopics .tag,.feat-body .foot .ctopics .tag{font-size:10.5px;padding:2px 8px;white-space:nowrap;flex:0 0 auto}
   /* 좋아요는 같은 줄 맨 오른쪽(주제 배지 뒤) */
   /* 조회수 — 기사 제목 옆 */
   .article .ptitle{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-top:12px}
@@ -259,11 +262,7 @@
   .article .ptitle .aview svg{width:14px;height:14px;flex:none;opacity:.8}
   .article .ptitle .aview b{font-weight:700;color:var(--muted)}
   @media(max-width:640px){.article .ptitle{flex-direction:column;align-items:flex-start;gap:8px}}
-  .card .foot .clike{display:inline-flex;align-items:center;gap:4px;margin-left:auto;padding-left:6px;color:var(--faint);font-weight:700;white-space:nowrap;flex:0 0 auto}
-  .card .foot .ctopics + .clike{margin-left:0;padding-left:8px}
-  .card .foot .clike svg{width:13px;height:13px;flex:none}
-  .card .foot .clike.on{color:var(--like)}
-  .card .foot .clike.on svg{fill:var(--like);stroke:var(--like)}
+  /* 카드의 좋아요 표시는 제거했습니다 — 좋아요는 기사 안에서 보고 누릅니다 */
   .src{display:inline-flex;align-items:center;gap:7px;margin-top:26px;padding:11px 17px;border:1px solid var(--border-strong);border-radius:11px;font-size:14px;font-weight:700;color:var(--muted);transition:.15s}
   .src:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
 
@@ -366,8 +365,7 @@
   .feat-main:hover .feat-body h2{color:var(--accent)}
   .feat-body .fex{color:var(--muted);font-size:14px;line-height:1.7;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .feat-body .foot{display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:4px;font-size:13px;color:var(--faint)}
-  .feat-body .foot .who{color:var(--muted);font-weight:700}
+  .feat-body .foot{display:flex;align-items:center;flex-wrap:wrap;gap:7px 6px;margin-top:auto;padding-top:4px;font-size:13px;color:var(--faint)}
   /* 오른쪽 최신 목록 */
   .feat-side{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);
     padding:16px 20px 14px;display:flex;flex-direction:column;min-width:0}
@@ -652,11 +650,11 @@ function toggleLike(btn){
     .finally(()=>{ btn.dataset.busy=""; });
 }
 
-/* 카드 하단에 붙는 주제 배지 — 1개만 보여 이름·날짜가 밀리지 않게 합니다.
-   (2개를 넣으면 좁은 카드에서 둘 다 "기…" 처럼 잘려 오히려 알아보기 어렵습니다)
+/* 카드 하단에 붙는 주제 배지 — 최대 3개.
+   공간이 모자라면 뒤쪽 배지부터 자동으로 숨겨져(CSS) 잘린 글자가 생기지 않습니다.
    배지를 누르면 그 주제 목록으로 이동합니다(카드 클릭과 겹치지 않도록 전파를 막습니다) */
 function cardTopicsHtml(p){
-  const ts=(p.topics||[]).filter(Boolean).slice(0,1);
+  const ts=(p.topics||[]).filter(Boolean).slice(0,3);
   if(!ts.length) return "";
   return `<span class="ctopics">${ts.map(t=>
     `<a class="tag ${tagClass(t)} tlink" href="#/topic/${encodeURIComponent(t)}" onclick="event.stopPropagation()">${t}</a>`
@@ -696,14 +694,12 @@ function coverHtml(p){
 }
 function cardHtml(p, i){
   const delay = Math.min((i||0)*60, 480);
-  const n=p.likes||0;
-  const like=n>0?`<span class="clike${isLiked(p.pageId)?" on":""}">${HEART}${n}</span>`:"";
+  /* 좋아요 수는 카드에서 빼고(기사 안에서 확인), 그 자리에 주제 배지를 더 보여줍니다 */
   return `<article class="card" style="animation-delay:${delay}ms" onclick="location.hash='#/post/${p.id}'">
     ${thumbHtml(p)}
 ${tagsHtml(p.tags)}
     <h3>${p.title}</h3>
-    <div class="foot">${avatarHtml(p.author)}
-      <span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span>${cardTopicsHtml(p)}${like}</div>
+    <div class="foot"><span class="byline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${fmtDate(p.date)}</span></span>${cardTopicsHtml(p)}</div>
   </article>`;
 }
 
@@ -749,7 +745,7 @@ function featMainHtml(p){
       ${tagsHtml(p.tags)}
       <h2>${p.title}</h2>
       ${ex?`<p class="fex">${ex}</p>`:""}
-      <div class="foot">${avatarHtml(p.author)}<span class="who">${p.author||""}</span> · <span>${fmtDate(p.date)}</span>${cardTopicsHtml(p)}</div>
+      <div class="foot"><span class="byline">${avatarHtml(p.author)}<span class="who">${p.author||""}</span> · <span>${fmtDate(p.date)}</span></span>${cardTopicsHtml(p)}</div>
     </div>
   </article>`;
 }
