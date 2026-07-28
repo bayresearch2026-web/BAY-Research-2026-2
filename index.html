@@ -252,6 +252,35 @@
   .spinner{width:26px;height:26px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
   .banner{background:var(--amber-soft);border:1px solid rgba(209,129,15,.3);color:var(--amber);font-size:13px;font-weight:600;padding:11px 16px;border-radius:11px;margin-top:18px}
+
+  /* ---------- 상세 페이지 2/3 + 1/3 레이아웃 ---------- */
+  #app.wide{max-width:1280px}
+  .post-layout{display:grid;grid-template-columns:2fr 1fr;gap:22px;align-items:start}
+  .post-main{min-width:0}
+  .post-side{position:sticky;top:82px;display:grid;grid-template-rows:1fr 1fr;gap:16px;min-width:0}
+  .spanel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 16px 14px;box-shadow:var(--shadow);
+          display:flex;flex-direction:column;min-height:0}
+  .spanel .sh{display:flex;align-items:baseline;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+  .spanel .sh h3{font-size:12.5px;font-weight:900;color:var(--accent);letter-spacing:.05em;text-transform:uppercase}
+  .spanel .sh span{font-size:11.5px;color:var(--faint);font-weight:600;margin-left:auto;white-space:nowrap}
+  .spanel .slist{display:flex;flex-direction:column;gap:4px}
+  .scard{display:block;padding:9px 10px;border-radius:10px;cursor:pointer;transition:.15s;border:1px solid transparent;min-width:0}
+  .scard:hover{background:var(--bg-soft);border-color:var(--border)}
+  .scard.cur{background:var(--accent-soft);border-color:rgba(11,92,255,.18)}
+  .scard .st{font-size:13.5px;font-weight:700;line-height:1.45;letter-spacing:-.01em;color:var(--text);
+             display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .scard:hover .st{color:var(--accent)}
+  .scard .sm{display:flex;align-items:center;gap:6px;margin-top:5px;font-size:11.5px;color:var(--faint);font-weight:600;min-width:0}
+  .scard .sm .who{color:var(--muted)}
+  .scard .sm .tag{font-size:10px;padding:1px 7px;max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .spanel .sempty{color:var(--faint);font-size:12.5px;padding:14px 4px;text-align:center;line-height:1.6}
+  .spanel .smore{margin-top:auto;padding-top:10px;font-size:12px;font-weight:800;color:var(--accent)}
+  .spanel .smore:hover{text-decoration:underline}
+  @media(max-width:1000px){
+    #app.wide{max-width:var(--maxw)}
+    .post-layout{grid-template-columns:1fr}
+    .post-side{position:static;grid-template-rows:auto auto;margin-top:8px}
+  }
 </style>
 </head>
 <body>
@@ -570,19 +599,56 @@ function insightHtml(p){
   if(/<[a-z]/i.test(s)) return s;
   return looksLikeMd(s)?mdToHtml(s):`<p>${s}</p>`;
 }
+/* 사이드바용 컴팩트 카드 */
+function sideCardHtml(p,cur){
+  const t=(p.topics||[]).filter(Boolean)[0];
+  return `<a class="scard${cur?" cur":""}" href="#/post/${p.id}">
+    <div class="st">${p.title}</div>
+    <div class="sm"><span class="who">${p.author||""}</span><span>·</span><span>${fmtDate(p.date)}</span>
+      ${t?`<span class="tag ${tagClass(t)}" style="margin-left:auto">${t}</span>`:""}</div></a>`;
+}
+/* 상세 페이지 우측 1/3 — 위: 최신 뉴스트래킹 3, 아래: 같은 토픽 3 */
+function postSideHtml(p){
+  const N=3;
+  const latest=[...POSTS].sort((a,b)=>String(b.date).localeCompare(String(a.date)))
+    .filter(x=>String(x.id)!==String(p.id)).slice(0,N);
+  const topics=(p.topics||[]).filter(Boolean);
+  const topic=topics[0]||"";
+  const related=POSTS.filter(x=>String(x.id)!==String(p.id)
+      && (x.topics||[]).filter(Boolean).some(t=>topics.includes(t)))
+    .sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,N);
+  return `<aside class="post-side">
+    <section class="spanel">
+      <div class="sh"><h3>최신 뉴스트래킹</h3><span>최근 업데이트 순</span></div>
+      <div class="slist">${latest.length?latest.map(x=>sideCardHtml(x)).join(""):`<div class="sempty">아직 다른 글이 없습니다.</div>`}</div>
+      <a class="smore" href="#/">전체 보기 →</a>
+    </section>
+    <section class="spanel">
+      <div class="sh"><h3>같은 주제</h3>${topic?`<span>${topic}</span>`:""}</div>
+      <div class="slist">${related.length?related.map(x=>sideCardHtml(x)).join("")
+        :`<div class="sempty">${topics.length?"같은 주제의 다른 글이 아직 없습니다.":"이 글에는 주제가 지정되어 있지 않습니다."}</div>`}</div>
+      <a class="smore" href="${topic?`#/topic/${encodeURIComponent(topic)}`:"#/topics"}">주제별 보기 →</a>
+    </section>
+  </aside>`;
+}
 function viewPost(id){
   const p=POSTS.find(x=>String(x.id)===String(id));
   if(!p) return `<p class="empty">글을 찾을 수 없습니다.</p>`;
   const src=p.source?`<a class="src" href="${p.source}" target="_blank" rel="noopener">🔗 원문 보기</a>`:"";
   return `<div class="back" onclick="history.length>1?history.back():location.hash='#/'">← 목록으로</div>
-  <article class="article">${tagsHtml(p.tags)}
-    <h1 style="margin-top:12px">${p.title}</h1>
-    <div class="abyline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span>
-      ${(p.topics||[]).filter(Boolean).map(t=>`<a class="tag ${tagClass(t)} tlink" href="#/topic/${encodeURIComponent(t)}">${t}</a>`).join("")}</div>
-    <h4>요약</h4><p class="psum">${fmtSummary(p.summary)}</p>
-    <h4>인사이트</h4><div class="insight">${insightHtml(p)}</div>
-    ${src}
-    ${likeBarHtml(p)}</article>`;
+  <div class="post-layout">
+    <div class="post-main">
+      <article class="article">${tagsHtml(p.tags)}
+        <h1 style="margin-top:12px">${p.title}</h1>
+        <div class="abyline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span>
+          ${(p.topics||[]).filter(Boolean).map(t=>`<a class="tag ${tagClass(t)} tlink" href="#/topic/${encodeURIComponent(t)}">${t}</a>`).join("")}</div>
+        <h4>요약</h4><p class="psum">${fmtSummary(p.summary)}</p>
+        <h4>인사이트</h4><div class="insight">${insightHtml(p)}</div>
+        ${src}
+        ${likeBarHtml(p)}</article>
+    </div>
+    ${postSideHtml(p)}
+  </div>`;
 }
 
 /* ---- 라우터 ---- */
@@ -599,6 +665,7 @@ function router(){
   else if(route==="post"){html=viewPost(arg);active="";}
   else{html=viewHome();}
   $app.innerHTML=html;
+  $app.classList.toggle("wide", route==="post");
   document.querySelectorAll(".links a").forEach(a=>a.classList.toggle("active",a.dataset.route===active));
   window.scrollTo(0,0);
 }
