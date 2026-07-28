@@ -280,18 +280,8 @@
   .post-layout .article .abyline{padding-bottom:20px;margin-bottom:6px;border-bottom:1px solid var(--border)}
   .post-layout .article .insight{background:none;border:none;padding:0;margin-top:2px}
   .post-layout .article .insight pre,.post-layout .article .insight table{background:var(--bg-soft)}
-  /* 상세 페이지 본문 글자 키우기 (요약·인사이트) */
-  .post-layout .article p.psum{font-size:17.5px;line-height:1.85}
-  .post-layout .article .insight p{font-size:17px;line-height:1.85}
-  .post-layout .article .insight li{font-size:17px;line-height:1.85}
-  .post-layout .article .insight blockquote{font-size:16.5px;line-height:1.8}
-  .post-layout .article h4{font-size:13px}
-  .post-layout .article .insight h1,.post-layout .article .insight h2,
-  .post-layout .article .insight h3.ih1{font-size:21px}
-  .post-layout .article .insight h3,.post-layout .article .insight h4.ih2{font-size:18.5px}
-  .post-layout .article .insight h4,.post-layout .article .insight h5,
-  .post-layout .article .insight h6,.post-layout .article .insight h5.ih3{font-size:16px}
-  .post-layout .article .insight table{font-size:15px}
+  /* "요약" · "인사이트" 섹션 제목만 키움 (본문 글자 크기는 그대로) */
+  .post-layout .article > h4{font-size:16px;letter-spacing:.02em;margin:30px 0 10px}
 
   /* 기사 상단 대표 이미지 (제목 박스 위) — 2:1 프레임 */
   .pcover{position:relative;display:block;width:100%;aspect-ratio:2/1;overflow:hidden;border-radius:var(--radius);
@@ -321,7 +311,10 @@
   .article .insight figure.ifig{margin:16px 0}
   .article .insight figure.ifig img{width:100%;max-height:420px;object-fit:contain;display:block;
                                     border:1px solid var(--border);border-radius:11px;background:var(--bg-soft)}
-  .article .insight figure.ifig figcaption{margin-top:7px;font-size:12.5px;color:var(--faint);text-align:center;line-height:1.6}
+  /* 본문 안 이미지 출처도 상단 배너와 동일한 모양 (오른쪽 아래, 읽음과 같은 크기·색) */
+  .article .insight figure.ifig figcaption{margin-top:8px;padding:0 2px;font-size:13px;font-weight:600;
+                                           color:var(--faint);text-align:right;line-height:1.6}
+  .article .insight figure.ifig figcaption a{color:var(--muted);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
   .post-layout .article h1{font-size:28px;line-height:1.38;margin-bottom:16px}
   .post-side{position:sticky;top:82px;display:grid;grid-template-rows:1fr 1fr;gap:16px;min-width:0}
   .spanel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 16px 14px;box-shadow:var(--shadow);
