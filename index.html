@@ -268,6 +268,12 @@
   footer{border-top:1px solid var(--border);margin-top:64px;padding:32px 0;color:var(--faint);font-size:13px;text-align:center;font-weight:600}
   .empty{color:var(--faint);padding:40px 0;text-align:center;font-size:14px}
   .loading{padding:80px 0;text-align:center;color:var(--muted)}
+  /* 기사 본문을 받아오는 동안 잠깐 보이는 회색 뼈대 */
+  .skel span{display:block;height:14px;margin:0 0 12px;border-radius:4px;
+    background:linear-gradient(90deg,var(--bg-soft) 25%,var(--border) 37%,var(--bg-soft) 63%);
+    background-size:400% 100%;animation:skel 1.3s ease infinite}
+  @keyframes skel{0%{background-position:100% 50%}100%{background-position:0 50%}}
+  @media (prefers-reduced-motion:reduce){.skel span{animation:none;background:var(--bg-soft)}}
   .spinner{width:26px;height:26px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;margin:0 auto 14px;animation:spin .8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
   .banner{background:var(--amber-soft);border:1px solid rgba(209,129,15,.3);color:var(--amber);font-size:13px;font-weight:600;padding:11px 16px;border-radius:11px;margin-top:18px}
@@ -388,6 +394,9 @@
   .ttab:hover{color:var(--text);border-color:var(--border)}
   .ttab.on{background:var(--accent-soft);border-color:rgba(11,92,255,.25);color:var(--accent)}
   .ttab .tn{font-weight:600;opacity:.65;margin-left:5px}
+  /* 탭을 링크로 쓸 때(개별 주제 페이지)도 버튼과 똑같이 보이도록 */
+  a.ttab{text-decoration:none;display:inline-flex;align-items:center;line-height:1.25}
+  .ttab.tmore{margin-left:auto;background:none;border-color:transparent}
 
   /* =========================================================================
      커서 · 호버 인터랙션 (디자인 요소)
@@ -801,18 +810,41 @@ function featItemHtml(p){
     <div class="fmeta">${p.author||""}${p.date?` · ${fmtDate(p.date)}`:""}</div>
   </a>`;
 }
-/* 주제 탭을 누르면 아래 기사 6개(3개씩 두 줄)만 바꿔 그립니다 */
+/* 주제 탭을 누르면 아래 기사만 바꿔 그립니다.
+   몇 개를 보여줄지는 그리드의 data-n 값으로 정합니다 (홈 6개 · 주제별 페이지 9개) */
 function dashTopic(name){
   const grid=document.getElementById("dashTopicGrid");
   if(!grid) return;
+  const n=Number(grid.dataset.n)||DASH_TOPIC_N;
   const items=POSTS.filter(p=>topicsOf(p).includes(name))
-    .sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,DASH_TOPIC_N);
+    .sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,n);
   grid.innerHTML=items.map((p,i)=>cardHtml(p,i)).join("")||`<p class="empty">이 주제의 글이 아직 없습니다.</p>`;
   document.querySelectorAll(".ttab").forEach(b=>b.classList.toggle("on", b.dataset.topic===name));
   const more=document.getElementById("dashTopicMore");
   if(more) more.setAttribute("href", `#/topic/${encodeURIComponent(name)}`);
 }
 window.dashTopic = dashTopic;
+
+/* 주제 탭 한 줄 — 홈과 주제별 페이지가 똑같이 나오도록 함께 쓰는 조각입니다.
+   opt.link=true 면 탭을 누를 때 그 주제 페이지로 바로 이동합니다(개별 주제 페이지용).
+   opt.more=true 면 오른쪽 끝에 "더보기 →" 를 답니다. */
+function topicTabsHtml(names, map, cur, opt){
+  const o=opt||{};
+  const tab=n=>`${n}<span class="tn">${map[n].length}</span>`;
+  return `<div class="ttabs">${names.map(n=> o.link
+    ? `<a class="ttab${n===cur?" on":""}" href="#/topic/${encodeURIComponent(n)}">${tab(n)}</a>`
+    : `<button type="button" class="ttab${n===cur?" on":""}" data-topic="${n.replace(/"/g,"&quot;")}"
+        onclick="dashTopic(this.dataset.topic)">${tab(n)}</button>`).join("")}
+    ${o.more?`<a class="ttab tmore" id="dashTopicMore" href="#/topic/${encodeURIComponent(cur)}">더보기 →</a>`:""}</div>`;
+}
+/* 주제 이름을 글 많은 순으로 정렬 (미분류는 주제가 아니므로 맨 뒤) */
+function topicNamesSorted(map, withNoTopic){
+  return Object.keys(map).filter(n=> withNoTopic || n!==NO_TOPIC)
+    .sort((a,b)=>{
+      if(a===NO_TOPIC) return 1; if(b===NO_TOPIC) return -1;
+      return map[b].length-map[a].length || a.localeCompare(b,"ko");
+    });
+}
 
 function viewDash(){
   if(!POSTS.length) return `${heroHtml()}<p class="empty">아직 글이 없습니다.</p>`;
@@ -830,8 +862,7 @@ function viewDash(){
 
   // 주제 탭 — 미분류 제외, 글 많은 순
   const map=topicMap();
-  const tnames=Object.keys(map).filter(n=>n!==NO_TOPIC)
-    .sort((a,b)=>map[b].length-map[a].length || a.localeCompare(b,"ko"));
+  const tnames=topicNamesSorted(map,false);
   const first=tnames[0]||"";
   const firstItems=first?map[first].slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,DASH_TOPIC_N):[];
 
@@ -850,11 +881,8 @@ function viewDash(){
   <div class="grid">${picks.map((p,i)=>cardHtml(p,i)).join("")}</div>
 
   <div class="sec-head"><h2>주제별</h2><span>관심 주제로 모아보기</span></div>
-  ${tnames.length?`<div class="ttabs">${tnames.map(n=>
-      `<button type="button" class="ttab${n===first?" on":""}" data-topic="${n.replace(/"/g,"&quot;")}"
-        onclick="dashTopic(this.dataset.topic)">${n}<span class="tn">${map[n].length}</span></button>`).join("")}
-    <a class="ttab" id="dashTopicMore" href="#/topic/${encodeURIComponent(first)}" style="margin-left:auto;background:none">더보기 →</a></div>
-  <div class="grid" id="dashTopicGrid">${firstItems.map((p,i)=>cardHtml(p,i)).join("")}</div>`
+  ${tnames.length?`${topicTabsHtml(tnames,map,first,{more:true})}
+  <div class="grid" id="dashTopicGrid" data-n="${DASH_TOPIC_N}">${firstItems.map((p,i)=>cardHtml(p,i)).join("")}</div>`
   :`<div class="banner">노션 DB에 <b>Topic</b> 열을 만들고 글마다 주제를 골라주시면 여기에 주제별로 나뉘어 표시됩니다.</div>`}`;
 }
 function viewWeeks(){
@@ -877,28 +905,30 @@ function topicMap(){
   POSTS.forEach(p=>topicsOf(p).forEach(t=>{(map[t]=map[t]||[]).push(p);}));
   return map;
 }
+const TOPICS_TAB_N = 9;   // 주제별 페이지에서 탭마다 보여줄 기사 수 (3개씩 세 줄)
+
+/* 주제별 목록 — 홈의 주제 탭 대시보드와 똑같은 모양입니다.
+   탭을 누르면 그 주제의 최신 기사가 아래에 바로 바뀌어 나옵니다. */
 function viewTopics(){
   const map=topicMap();
-  const names=Object.keys(map).sort((a,b)=>{
-    if(a===NO_TOPIC) return 1; if(b===NO_TOPIC) return -1;      // 미분류는 주제가 아니므로 맨 뒤
-    return map[b].length-map[a].length || a.localeCompare(b,"ko");  // 건수 많은 순 → 같으면 가나다순
-  });
+  const names=topicNamesSorted(map,true);
   if(!names.length) return `<div class="sec-head" style="margin-top:34px"><h2>주제별</h2></div><p class="empty">아직 글이 없습니다.</p>`;
   const only=names.length===1&&names[0]===NO_TOPIC;
+  const first=names[0];
+  const items=map[first].slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,TOPICS_TAB_N);
   return `<div class="sec-head" style="margin-top:34px"><h2>주제별</h2><span>관심 주제로 모아보기</span></div>
-  ${only?`<div class="banner">노션 DB에 <b>Topic</b> 열을 만들고 글마다 주제를 골라주시면 여기에 나뉘어 표시됩니다.</div>`:""}
-  <div class="topics">${names.map((n,i)=>{
-    const c=map[n].length, no=n===NO_TOPIC;
-    return `<div class="topic-card${no?" muted":""}" style="animation-delay:${Math.min(i*60,480)}ms" onclick="location.hash='#/topic/${encodeURIComponent(n)}'">
-      <div class="thead"><span class="tag ${tagClass(n)}">${n}</span><span class="ct">${c}건</span></div>
-      ${no?`<span class="mhint">아직 주제를 정하지 않은 글 — 노션에서 분류하면 위로 올라갑니다</span>`
-          :`<div class="peek">${map[n].slice(0,3).map(p=>`<span><i>${p.title}</i></span>`).join("")}</div>`}
-    </div>`;}).join("")}</div>`;
+  ${only?`<div class="banner" style="margin:-6px 0 16px">노션 DB에 <b>Topic</b> 열을 만들고 글마다 주제를 골라주시면 여기에 나뉘어 표시됩니다.</div>`:""}
+  ${topicTabsHtml(names,map,first,{more:true})}
+  <div class="grid" id="dashTopicGrid" data-n="${TOPICS_TAB_N}">${items.map((p,i)=>cardHtml(p,i)).join("")}</div>`;
 }
+/* 개별 주제 페이지 — 상단에 같은 탭을 달아 뒤로 가지 않고도 주제를 옮겨 다닐 수 있습니다 */
 function viewTopic(name){
+  const map=topicMap();
+  const names=topicNamesSorted(map,true);
   const items=POSTS.filter(p=>topicsOf(p).includes(name)).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   return `<div class="back" onclick="location.hash='#/topics'">← 주제 목록</div>
-  <div class="sec-head" style="margin-top:10px"><h2>${name}</h2><span>${items.length}건</span></div>
+  <div class="sec-head" style="margin-top:10px"><h2>${name}</h2><span>${items.length}건 · 전체 보기</span></div>
+  ${names.length>1?topicTabsHtml(names,map,name,{link:true}):""}
   <div class="grid">${items.length?items.map((p,i)=>cardHtml(p,i)).join(""):'<p class="empty">이 주제의 글이 아직 없습니다.</p>'}</div>`;
 }
 function viewAuthors(){
@@ -983,21 +1013,72 @@ function postSideHtml(p){
     </section>
   </aside>`;
 }
+/* ---- 기사 본문(인사이트) 지연 로딩 ----
+   목록(/api/posts)은 속도를 위해 본문을 싣지 않습니다.
+   기사를 열었을 때 그 글 하나만 /api/post 로 받아오고, 한 번 받은 글은 기억해 둡니다.
+   그래서 같은 글을 다시 열면 기다림이 없습니다. */
+function loadPostBody(p){
+  if(!p || p._bodyLoaded || p._bodyLoading) return;
+  // 샘플 모드(노션 연결 전)는 본문이 이미 들어 있으므로 바로 그려줍니다
+  if(USING_SAMPLE || !p.pageId){ p._bodyLoaded=true; paintPostBody(p); return; }
+  p._bodyLoading=true;
+  fetch("/api/post?pageId="+encodeURIComponent(p.pageId))
+    .then(r=> r.ok ? r.json() : Promise.reject(new Error("no api")))
+    .then(d=>{
+      p.insight = d.insight || "";
+      p.extraImagesHtml = d.imagesHtml || "";
+      p.coverCaption = d.coverCaption || p.coverCaption || "";
+      if(d.cover){ p.cover=d.cover; p.coverRaw=d.coverRaw||p.coverRaw; p.coverInBody=!!d.coverInBody; }
+      p._bodyLoaded=true; p._bodyLoading=false;
+      paintPostBody(p);
+    })
+    .catch(()=>{
+      p._bodyLoaded=true; p._bodyLoading=false;
+      paintPostBody(p, "본문을 불러오지 못했습니다. 잠시 후 새로고침해 주세요.");
+    });
+}
+/* 카드에 마우스를 올리면 미리 본문을 받아둡니다 → 클릭했을 때 이미 준비되어 있습니다 */
+document.addEventListener("mouseover", e=>{
+  const el = e.target.closest && e.target.closest('[href^="#/post/"], .card');
+  if(!el) return;
+  const m = (el.getAttribute("href")||el.getAttribute("onclick")||"").match(/#\/post\/(\d+)/);
+  if(!m) return;
+  const p = POSTS.find(x=>String(x.id)===m[1]);
+  if(p) loadPostBody(p);
+}, {passive:true});
+
+/* 받아온 본문을 화면에 끼워 넣습니다 (지금 그 글을 보고 있을 때만) */
+function paintPostBody(p, errMsg){
+  const box=document.getElementById("insightBox");
+  if(!box || box.dataset.pid!==String(p.pageId||"")) return;
+  box.innerHTML = errMsg ? `<p class="empty">${errMsg}</p>` : (insightHtml(p) || `<p class="empty">본문이 비어 있습니다.</p>`);
+  // 상단 배너 이미지는 본문을 읽어봐야 중복 여부를 알 수 있어서, 여기서 다시 그립니다
+  const slot=document.getElementById("coverSlot");
+  if(slot && !slot.dataset.done){ slot.outerHTML = coverHtml(p) || `<div id="coverSlot" data-done="1"></div>`; }
+}
+/* 본문을 기다리는 동안 보여줄 회색 뼈대 (빈 화면보다 덜 답답합니다) */
+const INSIGHT_SKELETON =
+  `<div class="skel"><span style="width:96%"></span><span style="width:88%"></span><span style="width:92%"></span>
+   <span style="width:70%"></span><span style="width:0;height:8px"></span>
+   <span style="width:94%"></span><span style="width:85%"></span><span style="width:60%"></span></div>`;
+
 function viewPost(id){
   const p=POSTS.find(x=>String(x.id)===String(id));
   if(!p) return `<p class="empty">글을 찾을 수 없습니다.</p>`;
   const src=p.source?`<a class="src" href="${p.source}" target="_blank" rel="noopener">🔗 원문 보기</a>`:"";
+  const ready=!!p._bodyLoaded;
+  const coverPart = ready ? (coverHtml(p)||`<div id="coverSlot" data-done="1"></div>`) : `<div id="coverSlot"></div>`;
   return `<div class="back" onclick="history.length>1?history.back():location.hash='#/'">← 목록으로</div>
   <div class="post-layout">
     <div class="post-main">
-      ${coverHtml(p)}
+      ${coverPart}
       <article class="article">${tagsHtml(p.tags)}
         <h1 class="ptitle">${p.title}</h1>
         <div class="abyline"><span class="byline">${avatarHtml(p.author)}<span class="who">${p.author}</span> · <span>${deriveWeek(p.date).label}</span> · <span>${p.date}</span></span>
 ${(p.topics||[]).filter(Boolean).map(t=>`<a class="tag ${tagClass(t)} tlink" href="#/topic/${encodeURIComponent(t)}">${t}</a>`).join("")}
           <span class="aview">${EYE}읽음 <b id="viewCount">${fmtCount(p.views)}</b></span></div>
         <h4>요약</h4><p class="psum">${fmtSummary(p.summary)}</p>
-        <h4>인사이트</h4><div class="insight">${insightHtml(p)}</div>
+        <h4>인사이트</h4><div class="insight" id="insightBox" data-pid="${p.pageId||""}">${ready?insightHtml(p):INSIGHT_SKELETON}</div>
         ${src}
         ${likeBarHtml(p)}</article>
     </div>
@@ -1021,7 +1102,7 @@ function router(){
   else{html=viewDash();active="dash";}
   $app.innerHTML=html;
   $app.classList.toggle("wide", route==="post");
-  if(route==="post"){ const cur=POSTS.find(x=>String(x.id)===String(arg)); if(cur) countView(cur); }
+  if(route==="post"){ const cur=POSTS.find(x=>String(x.id)===String(arg)); if(cur){ countView(cur); loadPostBody(cur); } }
   document.querySelectorAll(".links a").forEach(a=>a.classList.toggle("active",a.dataset.route===active));
   window.scrollTo(0,0);
 }

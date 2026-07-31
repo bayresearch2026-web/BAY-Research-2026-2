@@ -134,7 +134,8 @@ export default async function handler(req, res) {
       return;
     }
 
-    res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=300");
+    // 작성자 소개는 거의 바뀌지 않으므로 CDN에 넉넉히 담아둡니다 (첫 화면 속도에 도움)
+    res.setHeader("Cache-Control", "public, max-age=0, s-maxage=600, stale-while-revalidate=3600");
     res.status(200).json(authors);
   } catch (e) {
     if (debug) { res.status(200).json({ ...diag, error: String(e.message || e).slice(0, 300) }); return; }
